@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.order.OrderMapper">
+
+	<select id="selectUserDelivery" resultType="DeliveryDTO">	
+		SELECT delivery_id, delivery_name
+		FROM delivery
+		WHERE user_id = #{userId}
+		ORDER BY default_delivery
+	</select>
+	
+	<select id="selectOneUserDelivery" resultType="DeliveryDTO">
+		SELECT *
+		FROM delivery
+		WHERE user_id = #{userId} AND default_delivery = 1
+	</select>
+	
+	<select id="selectOneDelivery" resultType="DeliveryDTO">
+		SELECT *
+		FROM delivery
+		WHERE delivery_id = #{deliveryId}
+	</select>
+	
+	<select id="selectUserCoupon" resultType="CouponDTO">
+		SELECT *
+		FROM coupon c JOIN user_coupon uc ON c.coupon_id = uc.coupon_id
+		WHERE user_id = #{userId}
+	</select>
+
+	<select id="selectOrderProducts" resultType="OrderProductContainer">
+		SELECT *
+		FROM productcontainer
+		WHERE product_id IN
+		<foreach item="orderProducts" collection="orderProducts" open="(" close=")" separator=",">
+			#{orderProducts}
+		</foreach>
+	</select>
+	
+	<!-- // 주문 인서트
+	int insertOrder(@Param("orderHandler") OrderHandler orderHandler); -->
+	<insert id="insertOrder" >
+		INSERT INTO olive_order(order_id, user_id, delivery_id, delivery_date, order_status, delivery_msg, visit_how
+		, visit_pwd, order_type, today_option, packaging_option)
+		VALUES('or_'||TO_CHAR(order_seq.NEXTVAL, 'FM00000000'), #{orderHandler.userId}, #{orderHandler.deliveryId}, SYSDATE + 3, '결제완료', #{orderHandler.deliveryMsg}
+		, #{orderHandler.visitHow}, #{orderHandler.visitPwd}, '온라인', #{orderHandler.quickYN}, #{orderHandler.packagingOption})
+	</insert>
+	
+	<!-- // 결제 인서트
+	int insertPayment(@Param("orderHandler") OrderHandler orderHandler); -->
+	<insert id="insertPayment">
+		INSERT INTO payment(payment_id, order_id, total_price, payment_price, delivery_price, coupon_discount_price, point_price, payment_type, saved_money, card_type, installment_type)
+		VALUES('pa_'||TO_CHAR(payment_seq.NEXTVAL, 'FM00000000'), 'or_'||TO_CHAR(order_seq.CURRVAL, 'FM00000000')
+		, #{orderHandler.totalPrice}, #{orderHandler.totalPay}, #{orderHandler.deliveryPrice}, #{orderHandler.couponDiscountPrice}
+		, #{orderHandler.pointPrice}, #{orderHandler.payType}, #{orderHandler.totalPay}*0.0005, #{orderHandler.cardType}, #{orderHandler.installmentType})
+	</insert>
+	
+	<!-- // 주문 상품 인서트
+	int insertOrderProduct(String product_id, int product_cnt, String cat_m_id); -->
+	<insert id="insertOrderProduct">
+		INSERT INTO order_product(order_product_id, order_id, product_id, product_cnt, category_mid_id)
+		VALUES('op_'||TO_CHAR(order_product_seq.NEXTVAL, 'FM00000000'), 'or_'||TO_CHAR(order_seq.CURRVAL, 'FM00000000')
+		, #{product_id}, #{product_cnt}, #{cat_m_id})
+	</insert>
+	
+	<!-- // 주문 상품 중분류 아이디 얻어오기
+	String selectCatMID(@Param("productId") String productId); -->
+	<select id="selectCatMID" resultType="string" >
+		SELECT category_mid_id
+		FROM product p JOIN category_small c ON p.category_small_id = c.category_small_id
+		WHERE product_id = #{productId}
+	</select>
+	
+	<!-- // 재고 업데이트
+	int updateProStuck(String pro_id, int cnt); -->
+	<update id="updateProStuck">
+		UPDATE product
+		SET product_stock = product_stock - #{cnt}
+		WHERE product_id = #{pro_id}
+	</update>
+	
+	<!-- // 장바구니 삭제
+	int deleteCart(String user_id, String pro_id); -->
+	<delete id="deleteCart">
+		DELETE FROM basket
+		WHERE user_id = #{user_id} AND product_id = #{pro_id}
+	</delete>
+	
+	<!-- // 오늘 드림 인서트
+	int insertToday(@Param("orderHandler") OrderHandler orderHandler); -->
+	<insert id="insertToday">
+		INSERT INTO today_delivery(today_id, order_id, user_address, hour_group, today_type, today_delivery_date, today_arrive)
+		VALUES('td_'||TO_CHAR(today_delivery_seq.NEXTVAL, 'FM00000000'), 'or_'||TO_CHAR(order_seq.CURRVAL, 'FM00000000')
+		, #{orderHandler.region}, #{orderHandler.hour_group}, #{orderHandler.today_type}, #{orderHandler.today_del_date}, TO_DATE(#{orderHandler.today_arrive}, 'YYYY-MM-DD HH24:MI'))
+	</insert>
+	
+	<!-- // 결제 정보 가지고 오기
+	PaymentDTO selectOnePayment(String order_id); -->
+	<select id="selectOnePayment" resultType="PaymentDTO">
+		SELECT * 
+		FROM payment 
+		WHERE order_id = #{order_id}
+	</select>
+	
+	<!-- // 주문한 배송 정보 가지고 오기
+	DeliveryDTO selectOrderDelivery(String orderid); -->
+	<select id="selectOrderDelivery" resultType="DeliveryDTO">
+		SELECT delivery_road_addr, delivery_addr, delivery_detail_addr, delivery_recipient, delivery_tel, delivery_tel2, request_select, request_content 
+		FROM olive_order o JOIN delivery d ON o.delivery_id = d.delivery_id
+		WHERE order_id = #{orderId}
+	</select>
+	
+	<!-- // 재고 확인 여부
+	int selectIsProStock(String product_id); -->
+	<select id="selectIsProStock" resultType="int">
+		SELECT pro_stock 
+		FROM product 
+		WHERE pro_id = #{product_id}
+	</select>
+	
+	<!-- // 현재 주문 id 얻기
+	String selectCurrOrderID(); -->
+	<select id="selectCurrOrderID" resultType="string">
+		SELECT 'or_'||TO_CHAR(order_seq.CURRVAL, 'FM00000000') order_id 
+		FROM dual
+	</select>
+	
+	<!-- // 픽업 인서트
+	int insertPickup(@Param("orderHandler") OrderHandler orderHandler); -->
+	<!-- <insert id="insertPickup">
+		
+	</insert> -->
+	
+	<!-- 
+	// 현재 주문 id 얻기
+	String selectCurrOrderID();
+	
+	// 선물하기 주문 인서트
+	int insertGiftOrder(@Param("orderHandler") OrderHandler orderHandler);
+	
+	// 선물하기 결제 인서트
+	int inserGiftPay(@Param("orderHandler") OrderHandler orderHandler);
+	
+	// 선물 테이블 인서트
+	int insertGift(@Param("orderHandler") OrderHandler orderHandler);
+	
+	// cj 포인트 사용 내역 인서트
+	int insertCJPoint(Connection conn, String user_id, String p_content, String p_state);
+	
+	// 재고 확인 여부
+	int selectIsProStock(Connection conn, String pro_id);
+	
+	// 주문한 배송 정보 가지고 오기
+	DeliveryDTO selectOrderDelivery(String orderid);
+	
+	// 유저 포인트 업데이트
+	int updateUserPoint(String userㅑd, int point); -->
+
+</mapper>

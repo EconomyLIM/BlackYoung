@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.counselor.CounselorPersonalAskMapper">
+	<!-- 1:1문의 리스트
+	List<PersonalAskVO> getPersonalAskList(@Param("userId") String userId, @Param("criteria") Criteria criteria) throws ClassNotFoundException, SQLException;-->
+	 <select id="getPersonalAskList" resultType="PersonalAskVO" parameterType="java.util.Map">
+			SELECT p.personal_ask_id AS personalAskId, p.user_id AS userId, p.ask_category_id AS askCategoryId, od.order_id AS orderId
+       			 , p.personal_ask_date AS personalAskDate, p.personal_ask_status AS personalAskStatus, p.personal_ask_content AS personalAskContent
+       			 , p.personal_ask_img AS personalAskImg, p.personal_ask_answer AS personalAskAnswer
+       			 , ac.ask_category_major AS askCategoryMajor, ac.ask_category_minor AS askCategoryMinor
+       			 , od.order_date AS orderDate, od.order_id AS orderId, od.product_display_name AS productDisplayName
+       			 , od.product_name AS productName, od.product_cnt AS productCnt, od.order_status AS orderStatus
+			FROM personal_ask p
+				LEFT JOIN (
+   					SELECT o.order_date, op.order_id, pd.product_display_name
+       						 , p.product_name, op.product_cnt, o.order_status
+   				 	FROM product p 
+    					 LEFT JOIN product_display pd ON p.product_display_id = pd.product_display_id
+   						 RIGHT JOIN order_product op ON p.product_id = op.product_id
+   						 LEFT JOIN olive_order o ON o.order_id = op.order_id
+				) od ON od.order_id = p.order_id
+					RIGHT JOIN ask_category ac ON p.ask_category_id=ac.ask_category_id
+					WHERE p.user_id =#{userId}
+						AND p.personal_ask_date BETWEEN SYSDATE - (INTERVAL '1' MONTH) AND SYSDATE
+					ORDER BY p.personal_ask_id DESC
+     </select>	
+     
+	  <!-- 1:1문의 리스트
+	List<PersonalAskVO> getPersonalAskListWithDate(@Param("userId") String userId, @Param("criteria") Criteria criteria) throws ClassNotFoundException, SQLException;-->
+	 <select id="getPersonalAskListWithDate" resultType="PersonalAskVO" parameterType="java.util.Map">
+			SELECT p.personal_ask_id AS personalAskId, p.user_id AS userId, p.ask_category_id AS askCategoryId, od.order_id AS orderId
+       			 , p.personal_ask_date AS personalAskDate, p.personal_ask_status AS personalAskStatus, p.personal_ask_content AS personalAskContent
+       			 , p.personal_ask_img AS personalAskImg, p.personal_ask_answer AS personalAskAnswer
+       			 , ac.ask_category_major AS askCategoryMajor, ac.ask_category_minor AS askCategoryMinor
+       			 , od.order_date AS orderDate, od.order_id AS orderId, od.product_display_name AS productDisplayName
+       			 , od.product_name AS productName, od.product_cnt AS productCnt, od.order_status AS orderStatus
+			FROM personal_ask p
+				LEFT JOIN (
+   					SELECT o.order_date, op.order_id, pd.product_display_name
+       						 , p.product_name, op.product_cnt, o.order_status
+   				 	FROM product p 
+    					 LEFT JOIN product_display pd ON p.product_display_id = pd.product_display_id
+   						 RIGHT JOIN order_product op ON p.product_id = op.product_id
+   						 LEFT JOIN olive_order o ON o.order_id = op.order_id
+				) od ON od.order_id = p.order_id
+					RIGHT JOIN ask_category ac ON p.ask_category_id=ac.ask_category_id
+					WHERE p.user_id =#{userId}
+				AND p.personal_ask_date between to_date( #{ startdate } ,'YYYY-MM-DD' ) and to_date( #{enddate} , 'YYYY-MM-DD')
+				ORDER BY p.personal_ask_id DESC
+     </select>	
+     
+	<select id="getTotalCount" resultType="int">
+      SELECT COUNT(*)
+      FROM personal_ask
+      WHERE user_id=#{userId}
+	</select>	
+	
+	<!-- 문의 카테고리 대분류
+	List<String> getmajCategory() throws ClassNotFoundException, SQLException; -->
+	<select id="getmajCategory" resultType="String">
+		SELECT DISTINCT ask_category_major
+		FROM ask_category
+		WHERE NOT ask_category_major ='TOP10'
+	</select>
+	
+	<!-- 문의 카테고리 소분류
+	List<String> getminCategory(String askCategoryMajor) throws ClassNotFoundException, SQLException; -->
+	<select id="getminCategory" resultType="String">
+	SELECT ask_category_minor 
+	FROM ask_category 
+	WHERE ask_category_major = #{param1}
+	</select>
+	
+	<!-- 문의 키워드
+	List<String> faqKeyword(@Param("faqTitle") String faqTitle) throws ClassNotFoundException, SQLException; -->
+	<select id="faqKeyword" resultType="FaqVO">
+		SELECT t.faq_title as faqTitle, t.faq_content as faqContent
+		FROM ( 
+			SELECT faq_title , faq_content 
+			FROM faq 
+			WHERE faq_title LIKE '%' || #{faqKeyword} || '%'
+			ORDER BY faq_title 
+			) t 
+		<![CDATA[	
+		WHERE ROWNUM <=2
+		]]>
+	</select>
+	
+	<!-- //1:1문의 등록
+	int addPersonalAsk(PersonalAskVO askVo, String userId) throws ClassNotFoundException, SQLException; -->
+	<insert id="addPersonalAsk" parameterType="PersonalAskVO">
+    INSERT INTO personal_ask ( personal_ask_id, user_id, ask_category_id, order_id, personal_ask_content, personal_ask_img ) 
+    VALUES ( 'AC_'||TO_CHAR(personal_ask_seq.NEXTVAL, 'FM00000000'), #{userId}, #{askCategoryId},
+     					<if test="orderId != null">#{orderId},</if>
+              			#{personalAskContent},
+             			<if test="personalAskImg != null">#{personalAskImg}</if>
+				)
+	</insert>
+	
+	<!-- //주문내역 조회
+	List<PersonalAskDTO> getOrderList (String userId) throws ClassNotFoundException, SQLException; -->
+	<select id="getOrderList" resultType="PersonalAskVO" parameterType="java.util.Map">
+	SELECT orderDate, orderId, productDisplayName, productName, productCnt, orderStatus
+	FROM (
+		SELECT o.order_date AS orderDate, op.order_id AS orderId, pd.product_display_name AS productDisplayName
+				, p.product_name AS productName, op.product_cnt AS productCnt, o.order_status AS orderStatus
+		FROM product p LEFT JOIN product_display pd ON p.product_display_id = pd.product_display_id
+               			  RIGHT JOIN order_product op ON p.product_id = op.product_id
+               			  LEFT JOIN olive_order o ON o.order_id = op.order_id
+		WHERE o.user_id = #{userId}
+    )
+	WHERE orderDate BETWEEN SYSDATE - (INTERVAL '1' MONTH) AND SYSDATE
+	ORDER BY orderId DESC
+	</select>
+	
+	<!-- //주문내역 기간조회
+		List<PersonalAskDTO> getOrderListWithDate (String userId) throws ClassNotFoundException, SQLException; -->
+	<select id="getOrderListWithDate" resultType="PersonalAskVO" parameterType="java.util.Map">
+	SELECT orderDate, orderId, productDisplayName, productName, productCnt, orderStatus
+	FROM (
+		SELECT o.order_date AS orderDate, op.order_id AS orderId, pd.product_display_name AS productDisplayName
+				, p.product_name AS productName, op.product_cnt AS productCnt, o.order_status AS orderStatus
+		FROM product p LEFT JOIN product_display pd ON p.product_display_id = pd.product_display_id
+               			  RIGHT JOIN order_product op ON p.product_id = op.product_id
+               			  LEFT JOIN olive_order o ON o.order_id = op.order_id
+		WHERE o.user_id = #{userId}
+	)
+	WHERE orderDate between to_date( #{ startdate } ,'YYYY-MM-DD' ) and to_date( #{enddate} , 'YYYY-MM-DD')
+	</select>
+</mapper>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.counselor.CounselorNoticeMapper">
+	
+	<resultMap type="com.blackolive.app.domain.counselor.noticeVO" id="noticeMap">
+		<result property="noticeId" column="noticeId"/>
+		<result property="noticeNum" column="noticeNum"/>
+		<result property="noticeTitle" column="noticeTitle"/>
+		<result property="noticeCategory" column="noticeCategory"/>
+		<result property="noticeContent" column="noticeContent"/>
+		<result property="noticeDate" column="noticeDate"/>
+	</resultMap>
+	<!-- public List<noticeVO> getnoticeList(@Param("criteria") Criteria criteria) throws ClassNotFoundException, SQLException; -->
+	<select id="getnoticeList" resultMap="noticeMap">
+	<![CDATA[
+		SELECT
+		    noticeNum,
+		    notice_id AS noticeId,  
+		    notice_title AS noticeTitle,
+		    notice_category AS noticeCategory,
+		    notice_content AS noticeContent,
+		    notice_date AS noticeDate
+		FROM (
+		    SELECT
+		        ROWNUM AS noticeNum,
+		        notice_id,
+		        notice_title,
+		        notice_category,
+		        notice_content,
+		        notice_date
+		    FROM   (
+		    		SELECT * 
+		    		FROM notice 
+		    		ORDER BY notice_date desc
+		    		) n
+		    WHERE ROWNUM <= #{ criteria.pageNum } * #{ criteria.amount }
+		)
+		WHERE noticeNum > (#{ criteria.pageNum } - 1) * #{ criteria.amount }
+		]]>
+	</select>
+	
+	<!-- public int getnoticewithcategory(@Param("criteria") Criteria criteria , @Param("tabs") String tabs) throws ClassNotFoundException, SQLException; -->
+	<select id="getnoticewithcategory" resultMap="noticeMap">
+	<![CDATA[
+		SELECT
+		    noticeNum,
+		    notice_id AS noticeId,  
+		    notice_title AS noticeTitle,
+		    notice_category AS noticeCategory,
+		    notice_content AS noticeContent,
+		    notice_date AS noticeDate
+		FROM (
+		    SELECT
+		        ROWNUM AS noticeNum,
+		        notice_id,
+		        notice_title,
+		        notice_category,
+		        notice_content,
+		        notice_date
+		    FROM   (
+		    		SELECT * 
+		    		FROM notice 
+		    		ORDER BY notice_date desc
+		    		) n
+		    WHERE
+		    notice_category = #{ tabs }
+		    AND	ROWNUM <= #{ criteria.pageNum } * #{ criteria.amount }
+		    
+		)
+		WHERE noticeNum > (#{ criteria.pageNum } - 1) * #{ criteria.amount }
+		]]>
+	</select>
+	
+	
+	<resultMap type="com.blackolive.app.domain.counselor.noticeVO" id="noticedetailMap">
+		<result property="noticeId" column="noticeId"/>
+		<result property="noticeNum" column="noticeNum"/>
+		<result property="noticeTitle" column="noticeTitle"/>
+		<result property="noticeCategory" column="noticeCategory"/>
+		<result property="noticeContent" column="noticeContent"/>
+		<result property="noticeDate" column="noticeDate"/>
+		<result property="noticeTitleprev" column="noticeTitleprev"/>
+		<result property="noticeCategoryprev" column="noticeCategoryprev"/>
+		<result property="noticeIdprev" column="noticeIdprev"/>
+		<result property="noticeTitlenext" column="noticeTitlenext"/>
+		<result property="noticeCategorynext" column="noticeCategorynext"/>
+		<result property="noticeIdnext" column="noticeIdnext"/>
+	</resultMap>
+	
+	<!-- public noticeVO getnoticedetail(String noticeId) throws ClassNotFoundException, SQLException; -->	
+	<select id="getnoticedetail" resultMap="noticedetailMap">
+		SELECT
+		    noticeNum,
+		    notice_id AS noticeId,  
+		    notice_title AS noticeTitle,
+		    notice_category AS noticeCategory,
+		    notice_content AS noticeContent,
+		    notice_date AS noticeDate,
+            noticeTitleprev,
+            noticeCategoryprev,
+            noticeIdprev,
+            noticeTitlenext,
+            noticeCategorynext,
+            noticeIdnext            
+		FROM (
+		    SELECT
+		        ROWNUM AS noticeNum,
+		        notice_id,
+		        notice_title,
+		        notice_category,
+		        notice_content,
+		        notice_date,
+                lead(notice_title,1,0) over (order by notice_date desc) AS noticeTitleprev,
+                lead(notice_category,1,0) over (order by notice_date desc) AS noticeCategoryprev,
+                lead(notice_id,1,0) over (order by notice_date desc) AS noticeIdprev,
+                lag(notice_title,1,0) over (order by notice_date desc) AS noticeTitlenext,
+                lag(notice_category,1,0) over (order by notice_date desc ) AS noticeCategorynext,
+                lag(notice_id,1,0) over (order by notice_date desc) AS noticeIdnext
+		    FROM   (
+		    		SELECT * 
+		    		FROM notice 
+		    		ORDER BY notice_date desc
+		    		) n
+		) a
+          WHERE notice_id = #{ noticeId }
+	</select>
+	
+	<!-- public int getnoticetotal(@Param("criteria") Criteria criteria ) throws ClassNotFoundException, SQLException; -->
+	<select id="getnoticetotal" resultType="int">
+		SELECT COUNT(*)
+		FROM notice
+	</select>
+	
+</mapper>

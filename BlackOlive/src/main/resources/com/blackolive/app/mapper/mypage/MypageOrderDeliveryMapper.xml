@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.mypage.MypageOrderDeliveryMapper">
+
+	<resultMap type="com.blackolive.app.domain.mypage.OrderVO" id="orderMap">
+		<id property="orderId" column="orderId" />
+		<result property="orderDate" column="orderDate"/>
+		<result property="productDisplaySrc" column="productDisplaySrc"/>
+		<result property="categorySmallId" column="categorySmallId"/>
+		<result property="categoryMidId" column="categoryMidId"/>
+		<result property="brandName" column="brandName"/>
+		<result property="productDisplayName" column="productDisplayName"/>
+		<result property="productDisplayId" column="productDisplayId"/>
+		<result property="productName" column="productName"/>
+		<result property="productCnt" column="productCnt"/>
+		<result property="orderStatus" column="orderStatus"/>
+		<result property="totalPrice" column="totalPrice"/>
+		<result property="refundDate" column="refundDate"/>
+		<result property="refundStatus" column="refundStatus"/>
+	</resultMap>
+	<!-- public List<OrderDeliveryVO> getOrderList(String userid) throws ClassNotFoundException, SQLException; -->
+	<select id="getOrderList" resultMap="orderMap">
+		SELECT 
+        order_id as orderId, 
+        order_date as orderDate, 
+        product_display_src as productDisplaySrc, 
+        categorySmallId ,  
+        categoryMidId, 
+        brand_name as brandName, 
+        product_display_name as productDisplayName, 
+        product_display_id as productDisplayId,
+        product_name as productName, 
+        product_cnt as productCnt,
+        order_status as orderStatus, 
+        total_price as totalPrice, 
+        refund_date as refundDate, 
+        refund_status as refundStatus 
+				FROM ( 
+				   SELECT 
+                        o.order_id, 
+                        order_date, 
+                        product_display_src, 
+                        cs.category_small_id categorySmallId, 
+                        cm.category_mid_id categoryMidId, 
+                        brand_name, 
+                        product_display_name, 
+                        pd.product_display_id, 
+                        product_name, 
+                        product_cnt, 
+                        order_status,
+                        total_price, 
+                        refund_date, 
+                        refund_status, 
+				        ROW_NUMBER() OVER (PARTITION BY o.order_id ORDER BY product_display_src) AS rn 
+                    FROM olive_order o 
+                        LEFT JOIN order_product op ON o.order_id = op.order_id 
+                        LEFT JOIN product p ON op.product_id = p.product_id 
+                        LEFT JOIN ( 
+                            SELECT pd.product_display_id, product_display_name, brand_name, product_display_src 
+                            FROM product_display pd 
+                            LEFT JOIN product_display_img img ON pd.product_display_id = img.product_display_id 
+                            LEFT JOIN brand b ON pd.brand_id = b.brand_id 
+                            ) pd ON p.product_display_id = pd.product_display_id 
+                        LEFT JOIN refund r ON o.order_id = r.order_id 
+                        LEFT JOIN payment pm ON o.order_id = pm.order_id 
+                        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id 
+                        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id 
+                    WHERE user_id = #{ userid }
+                    AND order_date BETWEEN SYSDATE - (INTERVAL '1' MONTH) AND SYSDATE
+				 ) subquery 
+				WHERE rn = 1 
+	</select>
+	
+	
+	<resultMap type="com.blackolive.app.domain.mypage.OrderVO" id="orderMapwithDate">
+		<id property="orderId" column="orderId" />
+		<result property="orderDate" column="orderDate"/>
+		<result property="productDisplaySrc" column="productDisplaySrc"/>
+		<result property="categorySmallId" column="categorySmallId"/>
+		<result property="categoryMidId" column="categoryMidId"/>
+		<result property="brandName" column="brandName"/>
+		<result property="productDisplayName" column="productDisplayName"/>
+		<result property="productDisplayId" column="productDisplayId"/>
+		<result property="productName" column="productName"/>
+		<result property="productCnt" column="productCnt"/>
+		<result property="orderStatus" column="orderStatus"/>
+		<result property="totalPrice" column="totalPrice"/>
+		<result property="refundDate" column="refundDate"/>
+		<result property="refundStatus" column="refundStatus"/>
+	</resultMap>
+	<!-- public List<OrderDeliveryVO> getOrderListwithDate(String userid, String startdate,	String enddate) throws ClassNotFoundException, SQLException; -->
+	<select id="getOrderListwithDate" resultMap="orderMapwithDate">
+		SELECT 
+        order_id as orderId, 
+        order_date as orderDate, 
+        product_display_src as productDisplaySrc, 
+        categorySmallId ,  
+        categoryMidId, 
+        brand_name as brandName, 
+        product_display_name as productDisplayName, 
+        product_display_id as productDisplayId,
+        product_name as productName, 
+        product_cnt as productCnt,
+        order_status as orderStatus, 
+        total_price as totalPrice, 
+        refund_date as refundDate, 
+        refund_status as refundStatus 
+				FROM ( 
+				   SELECT 
+                        o.order_id, 
+                        order_date, 
+                        product_display_src, 
+                        cs.category_small_id categorySmallId, 
+                        cm.category_mid_id categoryMidId, 
+                        brand_name, 
+                        product_display_name, 
+                        pd.product_display_id, 
+                        product_name, 
+                        product_cnt, 
+                        order_status,
+                        total_price, 
+                        refund_date, 
+                        refund_status, 
+				        ROW_NUMBER() OVER (PARTITION BY o.order_id ORDER BY product_display_src) AS rn 
+                    FROM olive_order o 
+                        LEFT JOIN order_product op ON o.order_id = op.order_id 
+                        LEFT JOIN product p ON op.product_id = p.product_id 
+                        LEFT JOIN ( 
+                            SELECT pd.product_display_id, product_display_name, brand_name, product_display_src 
+                            FROM product_display pd 
+                            LEFT JOIN product_display_img img ON pd.product_display_id = img.product_display_id 
+                            LEFT JOIN brand b ON pd.brand_id = b.brand_id 
+                            ) pd ON p.product_display_id = pd.product_display_id 
+                        LEFT JOIN refund r ON o.order_id = r.order_id 
+                        LEFT JOIN payment pm ON o.order_id = pm.order_id 
+                        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id 
+                        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id 
+                    WHERE user_id = #{ userid }
+                        and order_date between to_date( #{ startdate } ,'YYYY-MM-DD' ) and to_date( ' ${ enddate }-23' , 'YYYY-MM-DD-HH24')
+				 ) subquery 
+				WHERE rn = 1
+	</select>
+	
+	
+	<resultMap type="com.blackolive.app.domain.mypage.OrderVO" id="orderMapwithCondition">
+		<id property="orderId" column="orderId" />
+		<result property="orderDate" column="orderDate"/>
+		<result property="productDisplaySrc" column="productDisplaySrc"/>
+		<result property="categorySmallId" column="categorySmallId"/>
+		<result property="categoryMidId" column="categoryMidId"/>
+		<result property="brandName" column="brandName"/>
+		<result property="productDisplayName" column="productDisplayName"/>
+		<result property="productDisplayId" column="productDisplayId"/>
+		<result property="productName" column="productName"/>
+		<result property="productCnt" column="productCnt"/>
+		<result property="orderStatus" column="orderStatus"/>
+		<result property="totalPrice" column="totalPrice"/>
+		<result property="refundDate" column="refundDate"/>
+		<result property="refundStatus" column="refundStatus"/>
+	</resultMap>
+	<!-- public List<OrderVO> getOrderListwithCondition(String userid, String startdate, String enddate, String searchType) throws ClassNotFoundException, SQLException; -->
+	<select id="getOrderListwithCondition" resultMap="orderMapwithCondition">
+		SELECT 
+        order_id as orderId, 
+        order_date as orderDate, 
+        product_display_src as productDisplaySrc, 
+        categorySmallId ,  
+        categoryMidId, 
+        brand_name as brandName, 
+        product_display_name as productDisplayName, 
+        product_display_id as productDisplayId,
+        product_name as productName, 
+        product_cnt as productCnt,
+        order_status as orderStatus, 
+        total_price as totalPrice, 
+        refund_date as refundDate, 
+        refund_status as refundStatus 
+				FROM ( 
+				   SELECT 
+                        o.order_id, 
+                        order_date, 
+                        product_display_src, 
+                        cs.category_small_id categorySmallId, 
+                        cm.category_mid_id categoryMidId, 
+                        brand_name, 
+                        product_display_name, 
+                        pd.product_display_id, 
+                        product_name, 
+                        product_cnt, 
+                        order_status,
+                        total_price, 
+                        refund_date, 
+                        refund_status, 
+				        ROW_NUMBER() OVER (PARTITION BY o.order_id ORDER BY product_display_src) AS rn 
+                    FROM olive_order o 
+                        LEFT JOIN order_product op ON o.order_id = op.order_id 
+                        LEFT JOIN product p ON op.product_id = p.product_id 
+                        LEFT JOIN ( 
+                            SELECT pd.product_display_id, product_display_name, brand_name, product_display_src 
+                            FROM product_display pd 
+                            LEFT JOIN product_display_img img ON pd.product_display_id = img.product_display_id 
+                            LEFT JOIN brand b ON pd.brand_id = b.brand_id 
+                            ) pd ON p.product_display_id = pd.product_display_id 
+                        LEFT JOIN refund r ON o.order_id = r.order_id 
+                        LEFT JOIN payment pm ON o.order_id = pm.order_id 
+                        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id 
+                        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id 
+                    WHERE user_id = #{ userid }
+                        and order_date between to_date( #{ startdate } ,'YYYY-MM-DD' ) and to_date( ' ${ enddate }-23' , 'YYYY-MM-DD-HH24')
+                        and order_type = #{ searchType }
+				 ) subquery 
+				WHERE rn = 1
+	</select>
+	
+	
+	<resultMap type="com.blackolive.app.domain.mypage.OrderVO" id="orderDetailMap">
+		<id property="orderId" column="orderId" />
+		<result property="orderDate" column="orderDate"/>
+		<result property="productDisplaySrc" column="productDisplaySrc"/>
+		<result property="categorySmallId" column="categorySmallId"/>
+		<result property="categoryMidId" column="categoryMidId"/>
+		<result property="brandName" column="brandName"/>
+		<result property="productDisplayName" column="productDisplayName"/>
+		<result property="productDisplayId" column="productDisplayId"/>
+		<result property="productName" column="productName"/>
+		<result property="productPrice" column="productPrice"/>
+		<result property="productCnt" column="productCnt"/>
+		<result property="orderStatus" column="orderStatus"/>
+		<result property="totalPrice" column="totalPrice"/>
+		<result property="refundDate" column="refundDate"/>
+		<result property="refundStatus" column="refundStatus"/>
+	</resultMap>
+	<!-- public List<OrderVO> getDetailOrder(String orderId) throws ClassNotFoundException, SQLException; -->
+	<select id="getDetailOrder" resultMap="orderDetailMap">
+		SELECT 
+        order_id as orderId, 
+        order_date as orderDate, 
+        product_display_src as productDisplaySrc, 
+        categorySmallId ,  
+        categoryMidId, 
+        brand_name as brandName, 
+        product_display_name as productDisplayName, 
+        product_display_id as productDisplayId,
+        product_name as productName, 
+        product_price as productPrice,
+        product_cnt as productCnt,
+        order_status as orderStatus, 
+        total_price as totalPrice, 
+        refund_date as refundDate, 
+        refund_status as refundStatus 
+				FROM ( 
+				   SELECT 
+                        o.order_id, 
+                        order_date, 
+                        product_display_src, 
+                        cs.category_small_id as categorySmallId, 
+                        cm.category_mid_id as categoryMidId, 
+                        brand_name, 
+                        product_display_name, 
+                        pd.product_display_id, 
+                        product_name, 
+                        product_price,
+                        product_cnt, 
+                        order_status,
+                        total_price, 
+                        refund_date, 
+                        refund_status, 
+				        ROW_NUMBER() OVER (PARTITION BY o.order_id ORDER BY product_display_src) AS rn 
+                    FROM olive_order o 
+                        LEFT JOIN order_product op ON o.order_id = op.order_id 
+                        LEFT JOIN product p ON op.product_id = p.product_id 
+                        LEFT JOIN ( 
+                            SELECT pd.product_display_id, product_display_name, brand_name, product_display_src 
+                            FROM product_display pd 
+                            LEFT JOIN product_display_img img ON pd.product_display_id = img.product_display_id 
+                            LEFT JOIN brand b ON pd.brand_id = b.brand_id 
+                            ) pd ON p.product_display_id = pd.product_display_id 
+                        LEFT JOIN refund r ON o.order_id = r.order_id 
+                        LEFT JOIN payment pm ON o.order_id = pm.order_id 
+                        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id 
+                        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id 
+                    WHERE o.order_id = #{ orderId }
+				 ) subquery 
+				WHERE rn = 1
+	</select>
+	
+	
+	<resultMap type="com.blackolive.app.domain.mypage.DeliveryVO" id="DeliveryMap">
+		<id property="deliveryId" column="deliveryId"/>
+		<result property="deliveryRecipient" column="deliveryRecipient" />
+		<result property="deliveryTel" column="deliveryTel"/>
+		<result property="deliveryTel2" column="deliveryTel2"/>
+		<result property="deliveryZipcode" column="deliveryZipcode"/>
+		<result property="deliveryRoadAddr" column="deliveryRoadAddr"/>
+		<result property="deliveryAddr" column="deliveryAddr"/>
+		<result property="deliveryDetailAddr" column="deliveryDetailAddr"/>
+		<result property="deliveryMsg" column="deliveryMsg"/>
+	</resultMap>
+	<!-- public DeliveryVO getDelivery(String orderId) throws ClassNotFoundException, SQLException; -->
+	<select id="getDelivery" resultMap="DeliveryMap">
+		SELECT delivery_recipient AS deliveryRecipient,
+                d.delivery_id AS deliveryId,
+                delivery_tel AS deliveryTel,
+                delivery_tel2 AS deliveryTel2,
+                delivery_zipcode AS deliveryZipcode,
+                delivery_road_addr AS deliveryRoadAddr,
+                delivery_addr AS deliveryAddr,
+                delivery_detail_addr AS deliveryDetailAddr,
+                delivery_msg AS deliveryMsg
+		FROM delivery d left join olive_user u on d.user_id = u.user_id 
+		                left join olive_order o on d.user_id = o.user_id 
+		where order_id = #{ orderId } 
+			AND rownum = 1
+	</select>
+	
+	
+	<resultMap type="com.blackolive.app.domain.mypage.PaymentVO" id="PaymentMap">
+		<id property="orderPrice" column="orderPrice" />
+		<result property="totalPrice" column="totalPrice"/>
+		<result property="deliveryPrice" column="deliveryPrice"/>
+		<result property="couponDiscountPrice" column="couponDiscountPrice"/>
+		<result property="pointPrice" column="pointPrice"/>
+		<result property="paymentPrice" column="paymentPrice"/>
+		<result property="paymentType" column="paymentType"/>
+		<result property="cardType" column="cardType"/>
+		<result property="installmentType" column="installmentType"/>
+		<result property="paymentDate" column="paymentDate"/>
+		<result property="refundDate" column="refundDate"/>
+		<result property="refundPrice" column="refundPrice"/>
+		<result property="refundReason" column="refundReason"/>
+		<result property="refundStatus" column="refundStatus"/>
+	</resultMap>
+	<!-- public PaymentVO getPayment(String orderId) throws ClassNotFoundException, SQLException; -->
+	<select id="getPayment" resultMap="PaymentMap">
+	 	SELECT total_price + delivery_price as orderPrice, 
+             total_price as totalPrice, 
+             delivery_price as deliveryPrice, 
+             coupon_discount_price as couponDiscountPrice,
+             point_price as pointPrice, 
+             payment_price as paymentPrice,
+             payment_type as paymentType, 
+             card_type as cardType, 
+             installment_type as installmentType, 
+             payment_date as paymentDate, 
+             refund_date as refundDate, 
+             refund_price as refundPrice,
+             refund_reason as refundReason,  
+             refund_status as refundStatus
+		 FROM payment p left join refund r on p.payment_id = r.payment_id 
+		                left join olive_order o on p.order_id = o.order_id 
+		 WHERE p.order_id = #{ orderId } 
+	</select>
+</mapper>

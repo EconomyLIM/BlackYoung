@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.basket.BasketMapper">
+
+
+
+	<!-- List<BasketDTO> basket(String quickyn, String userId); -->
+	
+	<select id="basket" parameterType="String" resultType="basketDTO">
+		 <choose>
+        <when test='quickyn == "Y"'>
+            SELECT * FROM basketviewtoday where user_id = #{userId}
+        </when>
+        <otherwise>
+            SELECT * FROM basketview where user_id = #{userId}
+        </otherwise>
+    </choose>
+    	order by basket_id
+	</select>
+<!-- int update(@Param("quickyn") String quickyn, @Param("userId")String userId,@Param("productCnt")int productCnt,@Param("productId")String productId); -->
+	<update id="update">
+		UPDATE
+		<choose>
+		<when test='quickyn == "Y"'>
+			today_pickup_basket
+		</when>
+		<otherwise>
+			basket
+		</otherwise>
+		</choose>
+		 <set>
+        <if test='productCnt != 0'>
+            product_cnt = #{productCnt},
+        </if>
+        <if test='productCnt == 0'>
+            product_cnt = product_cnt + 1,
+        </if>
+    	</set>
+     WHERE user_id = #{userId} AND product_id = #{productId}
+	</update>
+	
+	<!-- int delete(@Param("quickyn") String quickyn, @Param("userId")String userId,@Param("productId")String productId); -->
+	<delete id="delete">
+		DELETE from 
+		<choose>
+		<when test='quickyn == "Y"'>
+			today_pickup_basket
+		</when>
+		<otherwise>
+			basket
+		</otherwise>
+		</choose>
+		 WHERE user_id = #{userId} AND product_id = #{productId} 
+	</delete>
+	
+	<select id="basketCnt" resultType="integer">
+		select count(*) from today_pickup_basket where user_id = #{userId}
+		union
+		select count(*) from basket where user_id = #{userId}
+	</select>
+	
+	<!-- 장바구니 중복 체크 -->
+	<select id="check" resultType="int">
+		SELECT 
+    CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END 
+FROM 
+    <choose>
+		<when test='quickyn == "Y"'>
+			today_pickup_basket
+		</when>
+		<otherwise>
+			basket
+		</otherwise>
+		</choose>
+WHERE 
+    user_id = #{userId} AND product_id = #{productId}
+	</select>
+	
+	<!-- 장바구니 추가 -->
+	<insert id="add">
+		INSERT INTO 
+		<choose>
+		<when test='quickyn == "Y"'>
+			today_pickup_basket
+		</when>
+		<otherwise>
+			basket
+		</otherwise>
+		</choose>
+		(basket_id, user_id, product_id, product_cnt) 
+				VALUES ('nb_' || TO_CHAR(basket_seq.NEXTVAL, 'FM00000000'), #{userId}, #{productId}, #{productCnt})
+	</insert>
+</mapper>

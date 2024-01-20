@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC 
+   "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" 
+   "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+
+<tiles-definitions>
+	
+	<definition name="*.*.part" template="/WEB-INF/views/layout_cj/empty.jsp">
+		<put-attribute name="emptyContent" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	
+	<!-- usermodify layout -->
+	<definition name="usermodify.*" template="/WEB-INF/views/layout_cj/layout_cj.jsp">
+		<put-attribute name="cjHeader" value="/WEB-INF/views/layout_cj/header_cj.jsp"/>
+		<put-attribute name="cjFooter" value="/WEB-INF/views/layout_cj/footer_cj.jsp"/>
+		<put-attribute name="cjContent" value="/WEB-INF/views/usermodify/{1}.jsp"/>
+		<put-attribute name="cjTitle" value="블랙 올리브영"/>
+		<put-attribute name="cjCss1" value="/resources/cdn-main/CJbase.css"/>
+		<put-attribute name="cjCss2" value="/resources/cdn-main/CJparticipate.css"/>
+	</definition>
+	
+	<!-- join layout -->
+	<definition name="join.*" template="/WEB-INF/views/layout_cj/layout_cj.jsp">
+		<put-attribute name="cjHeader" value="/WEB-INF/views/layout_cj/header_cj.jsp"/>
+		<put-attribute name="cjFooter" value="/WEB-INF/views/layout_cj/footer_cj.jsp"/>
+		<put-attribute name="cjContent" value="/WEB-INF/views/join/{1}.jsp"/>
+		<put-attribute name="cjTitle" value="블랙 올리브영"/>
+		<put-attribute name="cjCss1" value="/resources/cdn-main/CJbase.css"/>
+		<put-attribute name="cjCss2" value="/resources/cdn-main/CJparticipate.css"/>
+	</definition>
+	
+	<definition name="mypage.*" template="/WEB-INF/views/mypage/layout/mypagelayout.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/layout/head.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/layout/footer.jsp"/>
+		<put-attribute name="mypageheader" value="/WEB-INF/views/mypage/layout/mypageheader.jsp"/>
+		<put-attribute name="mypagesider" value="/WEB-INF/views/mypage/layout/mypagesider.jsp"/>
+		<put-attribute name="mypagecontent" value="/WEB-INF/views/mypage/{1}.jsp"/>
+		<put-attribute name="title" value="블랙 올리브영"/>
+		<put-attribute name="css" value="/resources/cdn-main/style.css"/>
+	</definition>
+	
+	<definition name="counselor.*" template="/WEB-INF/views/counselor/layout/counselorlayout.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/layout/head.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/layout/footer.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/counselor/{1}.jsp"/>
+		<put-attribute name="title" value="블랙 올리브영"/>
+		<put-attribute name="css" value="/resources/cdn-main/style.css"/>
+		<put-attribute name="css2" value="/resources/cdn-main/{1}.css"/>		
+	</definition>
+
+	<definition name="*.*" template="/WEB-INF/views/layout/layout.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/layout/head.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/layout/footer.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/{1}/{2}.jsp"/>
+		<put-attribute name="title" value="블랙 올리브영"/>
+		<put-attribute name="css" value="/resources/cdn-main/style.css"/>
+	</definition>
+	
+	<!-- adminpage -->
+	
+	<definition name="adminpage/*" template="/WEB-INF/views/adminpage/layout/layout.jsp">
+		<put-attribute name="sidebar" value="/WEB-INF/views/adminpage/layout/sidebar.jsp"/>
+		<put-attribute name="topbar" value="/WEB-INF/views/adminpage/layout/topbar.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/views/adminpage/layout/footer.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/adminpage/{1}.jsp"/>
+		<put-attribute name="title" value="관리자페이지"/>
+	
+	</definition>
+	
+</tiles-definitions>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.blackolive.app.mapper.brandPage.BrandPageMapper">
+
+	<!-- 상단 브랜드 이미지,설명 등을 가져오기 -->
+	<select id="getBrands" parameterType="String"
+		resultType="BrandPageDTO">
+		SELECT b.brand_Id,
+		B.brand_Name, B.brand_Like,
+		B.brand_Summary, B.brand_Explaination, BI.brand_Img_Src
+		FROM BRAND B
+		JOIN BRAND_IMG BI ON B.brand_Id = BI.brand_Id
+		WHERE B.brand_Id = #{brandId }
+	</select> 
+
+	<!-- 스킨케어순,마스크팩(대카테고리) 클릭시 가져오기, 인기순, 신상품순, 판매순 클릭시 가져오기 -->
+	<select id="getSortBrands" resultType="BrandPageDTO">
+        SELECT *
+        FROM (
+            SELECT
+                pc.*,
+                ROWNUM AS rnum
+            FROM
+                productcontainer2 pc
+            WHERE
+                brand_id = #{brandId}
+                AND (
+                    <choose>
+                        <when test='dispcatno == null or dispcatno.equals("") or dispcatno =="cate_01"'>
+                            category_Large_Id IN ('0001', '0002', '0004')
+                        </when>
+                        <when test='dispcatno == "cate_02"'>
+                            category_Large_Id = '0001'
+                        </when>
+                        <when test='dispcatno == "cate_03"'>
+                            category_Large_Id = '0002'
+                        </when>
+                        <when test='dispcatno == "cate_04"'>
+                            category_Large_Id = '0004'
+                        </when>
+                    </choose>
+                )
+            AND ROWNUM &lt;= #{numOfItems}
+            ORDER BY
+                <choose>
+                    <when test='sort == "p"'>
+                        product_Display_Like DESC
+                    </when>
+                    <when test='sort == "n"'>
+                        product_Display_Regdate DESC
+                    </when>
+                    <when test='sort == "s"'>
+                        ordercnt DESC
+                    </when>
+                    <when test='sort == "l"'>
+                        afterPrice ASC
+                    </when>
+                    <when test='sort == "d"'>
+                        (minprice - afterprice) / minprice * 100 DESC
+                    </when>
+                </choose>
+        )
+        WHERE rnum &lt;= #{numOfItems}
+	</select>
+
+
+	<!-- 베스트상품 4개(술라이드바용) -->
+	<select id="getsellProduct" resultType="BrandPageDTO">
+	  <![CDATA[
+	  SELECT ROWNUM, t.* 
+            FROM ( 
+                SELECT PD.product_Display_Name, PDI.product_Display_Src, PD.product_Display_Like, P.Product_Price  
+                FROM Product_Display PD JOIN PRODUCT P ON PD.product_Display_Id = P.product_Display_Id  
+                                        JOIN product_Display_Img PDI ON PD.product_Display_Id = PDI.Product_Display_ID  
+               WHERE PD.BRAND_ID = #{brandId}  
+                ORDER BY PD.Product_Display_Like DESC 
+             ) t 
+             WHERE ROWNUM < 5
+               ]]>
+	</select>
+
+<!-- 유튜브 영상 가져오기  -->
+<select id="getBrandVideo" resultType="BrandPageDTO">
+SELECT *
+FROM BRAND_VIDEO
+WHERE brand_id=#{brandId}
+</select>
+	<!-- 리뷰가져오기 -->
+<select id="getReviews" resultType="BrandPageDTO">
+    <![CDATA[
+    SELECT * FROM ( 
+        SELECT r.review_Id,
+               pd.brand_id,
+               pdi.product_Display_Src,
+               r.review_Like,
+               r.review_Grade,
+               r.review_Content,
+               pd.product_Display_Id
+        FROM Product_Display pd
+        JOIN product_Display_IMG pdi ON pd.product_Display_Id = pdi.product_Display_Id
+        JOIN review r ON pd.product_Display_Id = r.product_Display_Id
+        WHERE pd.brand_Id = #{brandId}
+        ORDER BY r.review_Like DESC
+    ) WHERE ROWNUM <= 3
+    ]]>
+</select>
+	<!-- 상품 -->
+
+
+	<!-- 리뷰 클릭시 상세보기 -->
+	<!-- 프로필 가져오기 -->
+	<select id="getReviewProfile">
+		SELECT *
+		FROM USERPROFILE
+	</select>
+	<!-- 리뷰 상세내역 가져오기 -->
+	<select id="getReviewContent">
+       
+	</select>
+</mapper>

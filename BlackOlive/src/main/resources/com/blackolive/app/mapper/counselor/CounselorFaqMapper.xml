@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.counselor.CounselorFaqMapper">
+	
+	<resultMap type="com.blackolive.app.domain.counselor.FaqVO" id="faqMap">
+		<result property="rowNumber" column="rowNumber"/>
+		<result property="askCategoryId" column="askCategoryId"/>
+		<result property="askCategoryMajor" column="askCategoryMajor"/>
+		<result property="askCategoryMinor" column="askCategoryMinor"/>
+		<result property="faqTitle" column="faqTitle"/>
+		<result property="faqContent" column="faqContent"/>
+	</resultMap>
+	<!-- public List<FaqVO> faqlistwithMinor(@Param("askCategoryMajor") String askCategoryMajor, @Param("askCategoryMinor") String askCategoryMinor) throws ClassNotFoundException, SQLException; -->
+	<select id="faqlistwithMinor" resultMap="faqMap">
+		<![CDATA[
+		SELECT rowNumber, askCategoryId, askCategoryMajor, askCategoryMinor, faqTitle, faqContent                       
+		FROM             
+			(			
+				SELECT  *
+				FROM 
+				(
+						SELECT  ROW_NUMBER ()over( ORDER BY faq_id) AS rowNumber,
+						        f.ask_category_id AS askCategoryId ,
+						        ask_category_major AS askCategoryMajor,
+						        ask_category_minor AS askCategoryMinor,
+						        faq_title AS faqTitle,
+						        faq_content AS faqContent
+						FROM faq f
+						    LEFT JOIN ask_category ac on f.ask_category_id = ac.ask_category_id
+						WHERE ask_category_minor = #{ askCategoryMinor } 
+						and ask_category_major = #{ askCategoryMajor } 
+				        )
+				WHERE rowNumber <= #{ criteria.pageNum } * #{ criteria.amount }
+			)
+		WHERE rowNumber > (#{ criteria.pageNum } - 1) * #{ criteria.amount }
+	]]>
+	</select>
+	
+	
+	<!-- public List<FaqVO> faqlistwithMajor(String askCategoryMajor) throws ClassNotFoundException, SQLException; -->
+	<select id="faqlistwithMajor" resultMap="faqMap">
+		<![CDATA[
+		SELECT rowNumber, 
+			askCategoryId,
+			askCategoryMajor, 
+			askCategoryMinor,
+			faqTitle, 
+			faqContent                       
+		FROM             
+			(			
+				SELECT  *
+				FROM 
+				(
+						SELECT  ROW_NUMBER ()over( ORDER BY faq_id) AS rowNumber ,
+						        f.ask_category_id AS askCategoryId ,
+						        ask_category_major AS askCategoryMajor,
+						        ask_category_minor AS askCategoryMinor,
+						        faq_title AS faqTitle,
+						        faq_content AS faqContent
+						FROM faq f
+						    LEFT JOIN ask_category ac on f.ask_category_id = ac.ask_category_id
+						WHERE ask_category_major = #{ askCategoryMajor }
+				        )
+				WHERE rowNumber <= #{ criteria.pageNum } * #{ criteria.amount }
+			)
+		WHERE rowNumber > ( #{ criteria.pageNum } - 1) * #{ criteria.amount }
+	]]>
+	</select>
+	
+	
+	<!-- public int getTotal(String keyword) throws ClassNotFoundException, SQLException; -->
+	<select id="getTotal" resultType="int">
+		SELECT COUNT(*)
+		FROM faq
+		WHERE REGEXP_LIKE( FAQ_TITLE , #{ criteria.keyword }, 'i')
+		OR REGEXP_LIKE( faq_content , #{ criteria.keyword }, 'i') 
+	</select>	
+		
+	
+	<!-- public List<FaqVO> faqlistsearchwithpaging(Criteria criteria) throws ClassNotFoundException, SQLException; -->
+	<select id="faqlistsearchwithpaging" resultMap="faqMap">
+	<![CDATA[
+		SELECT rowNumber, askCategoryId, askCategoryMajor, askCategoryMinor, faqTitle, faqContent                       
+		FROM             
+			(			
+				SELECT  *
+				FROM 
+				(
+						SELECT  ROW_NUMBER ()over( ORDER BY faq_id) AS rowNumber ,
+						        f.ask_category_id AS askCategoryId ,
+						        ask_category_major AS askCategoryMajor,
+						        ask_category_minor AS askCategoryMinor,
+						        faq_title AS faqTitle,
+						        faq_content AS faqContent
+						FROM faq f
+						    LEFT JOIN ask_category ac on f.ask_category_id = ac.ask_category_id
+						WHERE REGEXP_LIKE( FAQ_TITLE , #{ criteria.keyword }, 'i') 
+						OR REGEXP_LIKE( faq_content , #{ criteria.keyword }, 'i') 
+				        )
+				WHERE rowNumber <= #{ criteria.pageNum } * #{ criteria.amount }
+			)
+		WHERE rowNumber > (#{ criteria.pageNum } - 1) * #{ criteria.amount }
+	]]>
+	</select>
+	
+	
+	<!-- public int getMinorTagTotal(String askCategoryMajor, String askCategoryMinor) throws ClassNotFoundException, SQLException; -->
+	
+	<select id="getMinorTagTotal" resultType="int">
+		SELECT COUNT(*)
+		FROM faq  f
+		    LEFT JOIN ask_category ac ON f.ask_category_id = ac.ask_category_id
+		WHERE REGEXP_LIKE( ASK_CATEGORY_MAJOR , #{ askCategoryMajor }, 'i')
+			and REGEXP_LIKE( ASK_CATEGORY_MINOR , #{ askCategoryMinor }, 'i')
+	</select> 
+	
+	
+	<!-- public int getMajorTagTotal(String askCategoryMajor) throws ClassNotFoundException, SQLException; -->
+	<select id="getMajorTagTotal" resultType="int">
+		SELECT COUNT(*)
+		FROM faq  f
+		    LEFT JOIN ask_category ac ON f.ask_category_id = ac.ask_category_id
+		WHERE REGEXP_LIKE( ASK_CATEGORY_MAJOR , #{ askCategoryMajor }, 'i')
+	</select> 
+</mapper>

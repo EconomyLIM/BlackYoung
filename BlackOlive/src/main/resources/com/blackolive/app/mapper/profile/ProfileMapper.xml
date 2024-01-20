@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.profile.ProfileMapper">
+	
+	<resultMap type="com.blackolive.app.domain.profile.ProfileVO" id="profileMap">
+		<result property="nickname" column="nickname"/>
+		<result property="profileContent" column="profileContent"/>
+		<result property="skintoneId" column="skintoneId"/>
+		<result property="skintoneName" column="skintoneName"/>
+		<result property="skintypeId" column="skintypeId"/>
+		<result property="skintypeName" column="skintypeName"/>
+		<result property="profileImg" column="profileImg"/>
+		<result property="follower" column="follower"/>
+		<result property="following" column="following"/>
+		<result property="reviewLikeTotal" column="reviewLikeTotal"/>
+	</resultMap>
+	<!-- public ProfileVO getprofile(String userid) throws ClassNotFoundException, SQLException; -->
+	<select id="getprofile" resultMap="profileMap">
+	SELECT up.user_id, 
+			nickname,
+			profile_content AS profileContent,
+			up.skintone_id AS skintoneId, 
+			skintone_name AS skintoneName, 
+			up.skintype_id AS skintypeId,
+			skintype_name AS skintypeName, 
+			profile_img AS profileImg, 
+			follower, 
+			following, 
+			sum(review_like) AS reviewLikeTotal
+	FROM userprofile up
+	    LEFT JOIN profile_skintone ps ON up.skintone_id = ps.skintone_id
+	    LEFT JOIN profile_skintype py ON up.skintype_id = py.skintype_id
+	    LEFT JOIN review r ON up.user_id = r.user_id
+	WHERE up.user_id = #{ userid }
+	GROUP BY up.user_id, nickname, profile_content, up.skintone_id, skintone_name, up.skintype_id, skintype_name, profile_img, follower, following
+	</select>
+	
+	<resultMap type="com.blackolive.app.domain.profile.InterestCategoryVO" id="interestMap">
+		<result property="userprofileInterestId" column="userprofileInterestId"/>
+		<result property="interestName" column="interestName"/>
+	</resultMap>
+	<!-- public List<InterestCategoryVO> getinterestcategory(String userid) throws ClassNotFoundException, SQLException; -->
+	<select id="getinterestcategory" resultMap="interestMap">
+		SELECT ui.interest_id AS userprofileInterestId,
+				 interest_name AS interestName
+		FROM userprofile_interest ui
+		    LEFT JOIN profile_interest pi ON ui.interest_id = pi.interest_id
+		WHERE user_id = #{ userid }
+	</select>
+	
+	<resultMap type="com.blackolive.app.domain.profile.SkinTroubleVO" id="skintroubleMap">
+		<result property="userprofileSkintroubleId" column="userprofileSkintroubleId"/>
+		<result property="skintroubleName" column="skintroubleName"/>
+	</resultMap>
+	<!-- public List<SkinTroubleVO> getskintrouble(String userid) throws ClassNotFoundException, SQLException; -->
+	<select id="getskintrouble" resultMap="skintroubleMap">
+		SELECT us.skintrouble_id AS userprofileSkintroubleId,
+			 skintrouble_name AS skintroubleName
+		FROM userprofile_skintrouble us
+		    LEFT JOIN profile_skintrouble ps ON us.skintrouble_id = ps.skintrouble_id    
+		WHERE user_id = #{ userid }
+	</select>
+	
+	<!-- public int updateprofile(@Param("userid") String userid,
+			@Param("nickname") String nickname,
+			@Param("profileContent") String profileContent,
+			@Param("skintoneId") String skintoneId, 
+			@Param("skintypeId") String skintypeId,
+			@Param("profileImg") String profileImg ) throws ClassNotFoundException, SQLException; -->
+	<update id="updateprofile">
+		UPDATE userprofile 
+		SET 
+		  	 <trim suffixOverrides=",">
+			 	<if test="nickname != null">nickname = #{nickname},</if>
+				<if test="profileContent != null">profile_content = #{profileContent},</if>
+				<if test="skintoneId != null">skintone_id = #{skintoneId},</if>
+				<if test="skintypeId != null">skintype_id = #{ skintypeId },</if>
+				<if test="profileImg != null">profile_img = #{ profileImg },</if>
+			 </trim>
+		WHERE user_id = #{ userid }
+	</update>
+		
+	<!-- public int deleteinterestcategory(String userid) throws ClassNotFoundException, SQLException; -->
+	<delete id="deleteinterestcategory">
+		DELETE FROM userprofile_interest
+		WHERE user_id = #{ userid }
+	</delete>
+	
+	<!-- public int deleteskintrouble(String userid) throws ClassNotFoundException, SQLException; -->
+	<delete id="deleteskintrouble">
+		DELETE FROM userprofile_skintrouble
+		WHERE user_id = #{ userid }
+	</delete>
+	
+	<!-- public int insertprofile(@Param("userid") String userid,
+			@Param("nickname") String nickname,
+			@Param("profileContent") String profileContent,
+			@Param("skintoneId") String skintoneId, 
+			@Param("skintypeId") String skintypeId,
+			@Param("profileImg") String profileImg ) throws ClassNotFoundException, SQLException; -->
+	<insert id="insertprofile">
+		INSERT INTO userprofile 
+			<trim prefix="(" suffix=")" suffixOverrides=",">
+				<if test="nickname != null">NICKNAME,</if>
+				<if test="profileContent != null">PROFILE_CONTENT,</if>
+				<if test="skintoneId != null">SKINTONE_ID,</if>
+				<if test="skintypeId != null">SKINTYPE_ID,</if>
+				<if test="profileImg != null">PROFILE_IMG,</if>
+			</trim>
+		VALUES
+			 <trim prefix="(" suffix=")" suffixOverrides=",">
+			 	<if test="nickname != null">#{nickname},</if>
+				<if test="profileContent != null">#{profileContent},</if>
+				<if test="skintoneId != null">#{skintoneId},</if>
+				<if test="skintypeId != null">#{skintypeId},</if>
+				<if test="profileImg != null">#{profileImg},</if>
+			 </trim>
+	</insert>
+		
+	<!-- public int insertinterestcategory(String userid, List<String> userprofileInterestId ) throws ClassNotFoundException, SQLException; -->
+	<insert id="insertinterestcategory">
+		
+		INSERT INTO userprofile_interest ( userprofile_interest_id, user_id, interest_id)
+		VALUES
+		<foreach collection="userprofileInterestId" item="interestId" separator="," >
+		 ( ( 'uin_' || LPAD(userprofile_interest_seq.NEXTVAL, 8, '0')) , #{ userid } , 	#{ interestId } )
+		</foreach>
+		
+	</insert>
+	
+	<!-- public int insertskintrouble(String userid, List<String> userprofileSkintroubleId ) throws ClassNotFoundException, SQLException; -->
+	<insert id="insertskintrouble">
+		
+		INSERT INTO userprofile_skintrouble ( userprofile_skintrouble_id, user_id, skintrouble_id)
+		VALUES 
+		<foreach collection="userprofileSkintroubleId" item="skintroubleId" separator="," >
+		 ( ( 'UST_' || LPAD(userprofile_skintrouble_seq.NEXTVAL, 8, '0')) , #{ userid } , #{ skintroubleId }  )
+		</foreach>
+		
+	</insert>
+
+	
+	
+</mapper>

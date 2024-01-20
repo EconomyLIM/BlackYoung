@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.login.MemberMapper">
+
+
+	<!-- public MemberVO login(@Param("userid") String userid); -->
+	<resultMap type="com.blackolive.app.domain.login.MemberVO" id="loginMap">
+		<id property="userId" column="id"/>
+		<result property="userPassword" column="pwd" />
+		<result property="userName" column="user_name" />
+		<result property="gradeName" column="grade_name" />
+		<result property="enabled" column="enabled" />
+		<collection property="authority" resultMap="authMap" />
+	</resultMap>
+	<resultMap type="com.blackolive.app.domain.login.AuthVO" id="authMap">
+		<result property="username" column="user_id"/>	
+		<result property="authority" column="auth"/>		
+	</resultMap>
+
+	<select id="login" resultMap="loginMap">
+ 		SELECT
+				    user_id AS id,
+				    user_name,
+				    user_password AS pwd,
+				    grade_name,
+				    enabled,
+		            AUTHORITY AS auth
+				FROM
+				    olive_user u
+		            LEFT JOIN
+		                user_authorities a ON u.user_id = a.username
+		                join olive_members m on u.grade_id = m.grade_id 
+				WHERE
+				    user_id = #{ userid }
+				GROUP BY
+				    user_id, user_password,user_name,grade_name, enabled, AUTHORITY
+	</select>
+
+</mapper>

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.exhibition.ExhibitionMapper">
+
+<!-- // 배너정보 갖고오는 작업 getExhibitionBanner
+	public List<ExhibitionBannerDTO> getExhibitionBanner(String exhibitionCategory) throws SQLException; -->
+	<select id="getExhibitionBanner" resultType="ExhibitionBannerDTO">
+		SELECT ex.exhibition_id, EXHIBITION_BANNER_IMG_SRC, EXHIBITION_BANNER_SUMMARY, EXHIBITION_BANNER_SUMMARY2, EXHIBITION_BANNER_KEYWORD, ex.EXHIBITION_CATEGORY
+		FROM exhibition_banner eb
+		JOIN exhibition ex ON eb.exhibition_id = ex.exhibition_id
+		WHERE exhibition_end_day > SYSDATE AND ex.EXHIBITION_CATEGORY = #{exhibitionCategory}
+	</select>
+
+	<resultMap type="ProductContainer" id="productContainer">
+		<result property="productDisplaySrc" column="PRODUCT_DISPLAY_SRC"/>
+		<result property="brandName" column="BRAND_NAME"/>
+		<result property="brandId" column="BRAND_ID"/>
+		<result property="productDisplayName" column="PRODUCT_DISPLAY_NAME"/>
+		<result property="minprice" column="MINPRICE"/>
+		<result property="afterprice" column="afterprice"/>
+		<result property="categoryLargeId" column="CATEGORY_MID_ID"/>
+		<result property="categoryMidId" column="CATEGORY_SMALL_ID"/>
+		<result property="categorySmallId" column="AFTERPRICE"/>
+		<result property="productDisplayId" column="PRODUCT_DISPLAY_ID"/>
+		<result property="productId" column="PRODUCT_ID"/>
+		<result property="couponflag" column="COUPONFLAG"/>
+		<result property="discountflag" column="DISCOUNTFLAG"/>
+		<result property="presentflag" column="PRESENTFLAG"/>
+		<result property="todaypickupflag" column="TODAYPICKUPFLAG"/>
+		<result property="ordercnt" column="ORDERCNT"/>
+		<result property="productStock" column="PRODUCT_STOCK"/>
+		<result property="productDisplayLike" column="PRODUCT_DISPLAY_LIKE"/>
+		<result property="productDisplayRegdate" column="PRODUCT_DISPLAY_REGDATE"/>
+	</resultMap>
+	
+	<resultMap type="com.blackolive.app.domain.exhibition.BannerNProductDTO" id="getexhibitionbanner">
+		<result property="exhibitionId" column="EXHIBITION_ID"/>	
+		<result property="exhibitionBannerImgSrc" column="EXHIBITION_BANNER_IMG_SRC"/>	
+		<result property="exhibitionBannerSummary" column="EXHIBITION_BANNER_SUMMARY"/>	
+		<result property="exhibitionBannerSummary2" column="EXHIBITION_BANNER_SUMMARY2"/>	
+		<result property="exhibitionBannerKeyword" column="EXHIBITION_BANNER_KEYWORD"/>
+		<result property="exhibitionCategory" column="EXHIBITION_CATEGORY"/>
+		<collection property="getproductcontainer" resultMap="productContainer"/>	
+	</resultMap>
+	
+	<select id="getExhibitionBannerNProduct" resultMap="getexhibitionbanner">
+		<![CDATA[
+	SELECT * FROM ( 
+    SELECT eb.*,EXHIBITION_CATEGORY, pdct.*, 
+        ROW_NUMBER() OVER (PARTITION BY ex.exhibition_id ORDER BY pd.product_display_id) as row_num 
+        FROM exhibition_banner eb 
+        JOIN exhibition ex ON ex.exhibition_id = eb.exhibition_id
+        JOIN exhibition_category ec ON ec.exhibition_id = ex.exhibition_id 
+        JOIN exhibition_connect econn ON econn.exhibition_category_id = ec.exhibition_category_id
+        JOIN product_display pd ON pd.product_display_id = econn.product_display_id
+        JOIN (SELECT MAX(product_display_id) as product_display_id, category_small_id FROM product GROUP BY product_display_id, category_small_id) p ON p.product_display_id = pd.product_display_id
+        JOIN category_small cs ON cs.category_small_id = p.category_small_id
+        JOIN category_mid cm ON cm.category_mid_id = cs.category_mid_id
+        JOIN category_large cl ON cl.category_large_id = cm.category_large_id
+        ]]>  
+        <if test="categoryLargeId != null">
+        	and cl.category_large_id = #{categoryLargeId}
+        </if>
+        <![CDATA[
+        JOIN productcontainer pdct ON pd.product_display_id = pdct.product_display_id
+        WHERE EXHIBITION_END_DAY > SYSDATE and EXHIBITION_CATEGORY = 10
+            ) 
+        WHERE row_num<=2 
+        ]]> 
+	</select>
+	
+	<!-- // 기획전 정보 갖고오는 작업 getExhibitionInfo
+	public ExhibitionInfoDTO getExhibitionInfo (@Param("eventId")String eventId) throws SQLException; -->
+	<select id="getExhibitionInfo" resultType="ExhibitionInfoDTO">
+		SELECT 
+			EXHIBITION_ID,
+			EXHIBITION_NAME,
+			TO_CHAR(EXHIBITION_START_DAY, 'yyyy.mm.dd') as EXHIBITION_START_DAY,
+			TO_CHAR(EXHIBITION_END_DAY, 'yyyy.mm.dd') as EXHIBITION_END_DAY,
+			EXHIBITION_CATEGORY
+		FROM exhibition
+		WHERE EXHIBITION_ID = #{eventId}
+	</select>
+	
+	<!-- // 기획전 사진 갖고오는 작업 getExhibitionImg
+	public List<ExhibitionImgDTO> getExhibitionImg(@Param("eventId")String eventId) throws SQLException; -->
+	<select id="getExhibitionImg" resultType="ExhibitionImgDTO">
+		SELECT 
+			EXHIBITION_IMG_ID,
+			EXHIBITION_IMG_SRC
+		FROM exhibition_img
+		WHERE EXHIBITION_ID = #{eventId}
+	</select>
+	
+	<!-- // 기획전 내부카테고리와 상품 리스트 갖고오는 작업
+	public List<ExhibitionCategoryDTO> getExhibitionCategory(@Param("eventId")String eventId) throws SQLException; -->
+	
+	<resultMap type="ExhibitionCategoryDTO" id="getExCate">
+		<result property="exhibitionCategoryId" column="exhibition_category_id"/>
+		<result property="exhibitionCategoryName" column="exhibition_category_name"/>
+		<collection property="productContainer" resultMap="productContainer"></collection>	
+	</resultMap>
+	
+	<select id="getExhibitionCategory" resultMap="getExCate">
+		SELECT excate.exhibition_category_id, excate.exhibition_category_name, pdct.*
+		FROM exhibition ex
+		JOIN exhibition_category excate ON ex.exhibition_id = excate.exhibition_id
+		JOIN exhibition_connect exconn ON excate.exhibition_category_id = exconn.exhibition_category_id
+		JOIN productcontainer pdct ON exconn.product_display_id = pdct.product_display_id
+		WHERE ex.exhibition_id = #{eventId}
+	</select>
+	
+	<select id="getMdRecommend" resultType="productContainer">
+	<![CDATA[
+	 SELECT * 
+				 FROM ( 
+				    SELECT * 
+				    FROM  productcontainer
+				    ORDER BY DBMS_RANDOM.VALUE 
+				 ) 
+				 WHERE ROWNUM <= 2 
+				 ]]> 
+	</select>
+	
+	<resultMap type="BrandTopDTO" id="getBrandTop">
+		<result property="brandId" column="brand_id"/>
+		<result property="brandName" column="brand_name"/>
+		<result property="brandLike" column="brand_like"/>
+		<result property="brandImgSrc" column="brand_img_src"/>
+		<collection property="productContainer" resultMap="productContainer"></collection>	
+	</resultMap>
+	
+<!-- 브랜드 상위 10개 + 상품2개 -->
+<select id="getTopBrand" resultMap="getBrandTop">
+<![CDATA[
+	 SELECT * FROM ( 
+				    SELECT b.brand_id, b.brand_name, brand_like, brand_img_src ,p.product_display_src, p.product_display_id,p.product_display_name,p.minprice,p.category_large_id,p.category_mid_id,p.category_small_id,p.afterprice,p.product_id,
+                    p.couponflag,p.discountflag,p.presentflag,p.todaypickupflag,ordercnt,product_stock,product_display_like,product_display_regdate
+				    FROM brand b 
+				    JOIN brand_img bi ON b.brand_id = bi.brand_id 
+                    JOIN ( SELECT *
+                            FROM (
+                                    SELECT productcontainer.*,
+                                            ROW_NUMBER() OVER (PARTITION BY brand_id ORDER BY product_display_like) AS row_num
+                                    FROM productcontainer
+                                ) ranked
+                            WHERE row_num <= 2)  p on b.brand_id = p.brand_id
+                            ORDER BY brand_like DESC 
+				) WHERE ROWNUM <= 20
+				]]> 
+</select>
+</mapper>

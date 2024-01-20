@@ -1,0 +1,35 @@
+@charset "UTF-8";
+
+.list-customer > ul {
+    counter-reset: list; /* 카운터 초기화 */
+    list-style-type: none;
+}
+
+.list-customer > ul > li:before {
+    position: absolute;
+    top: 21px;
+    left: 18px;
+    width: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    line-height: normal;
+    letter-spacing: normal;
+    color: #777;
+    content: "0" counter(list);
+    counter-increment: list;
+}
+
+.list-customer > ul > li:nth-child(n+10):before {
+    content: counter(list);
+    
+}
+
+.list-customer > ul > li .tit {
+    background: 0 0;
+}
+
+.list-customer > ul > li.topThree:before {
+    color: #f27370;
+}
+

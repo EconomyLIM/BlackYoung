@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.mypage.MypageListMapper">
+	<!-- 회원정보 반환 -->
+	<select id="getUser" resultType="OliveUserDTO">
+		SELECT *
+		FROM olive_user
+		WHERE user_id = #{userId}
+	</select>
+</mapper>

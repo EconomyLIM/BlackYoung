@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.mypage.MypageMainMapper">
+
+
+	<!-- public MypageHeaderVO getHeader(String userid) throws ClassNotFoundException, SQLException; -->
+	<resultMap type="com.blackolive.app.domain.mypage.MypageHeaderVO" id="myheaderMap">
+		<id property="userid" column="id"/>
+		<result property="username" column="name" />
+		<result property="grade" column="grade"/>
+		<result property="userimg" column="img"/>			
+		<result property="usercoupon" column="coupon" />
+		<result property="userpoint" column="point" />
+		<result property="userdeposit" column="deposit" />
+	</resultMap>
+
+	<select id="getHeader" resultMap="myheaderMap">
+		SELECT
+		    u.user_id AS id,
+		    user_name AS name,
+		    grade_name AS grade,
+		    user_point AS point,
+		    COALESCE(PROFILE_IMG, 'https://static.oliveyoung.co.kr/pc-static-root/image/comm/my_picture_base.jpg') AS img,
+		    COALESCE(TOTOAL_DEPOSIT, 0) AS deposit,
+		    COUNT(coupon_id) AS coupon
+		FROM
+		    olive_user u
+		LEFT JOIN
+		    olive_members m ON u.grade_id = m.grade_id
+		LEFT JOIN
+		    userprofile up ON u.user_id = up.user_id
+		LEFT JOIN
+		    user_deposit d ON u.user_id = d.user_id
+		LEFT JOIN
+		    user_coupon c ON u.user_id = c.user_id
+		WHERE
+		    u.user_id = #{ userid }
+		GROUP BY
+		    u.user_id, user_name, grade_name, user_point, PROFILE_IMG, TOTOAL_DEPOSIT
+	</select>
+	
+	
+	<!-- public int getSide(String userid) throws ClassNotFoundException, SQLException; -->
+	<select id="getSide" resultType="int">
+		   SELECT COUNT(*)
+                    FROM REVIEW
+                    WHERE user_id = #{ userid }
+	</select>
+	
+	<!-- public int getDeliveryStatus(String userid) throws ClassNotFoundException, SQLException; -->
+	<resultMap type="com.blackolive.app.domain.mypage.DeliveryStatusVO" id="DeliveryStatusMap">
+		<result property="deliveryStatus1" column="deliveryStatus1"/>
+		<result property="deliveryStatus2" column="deliveryStatus2"/>
+		<result property="deliveryStatus3" column="deliveryStatus3"/>
+		<result property="deliveryStatus4" column="deliveryStatus4"/>
+		<result property="deliveryStatus5" column="deliveryStatus5"/>
+	</resultMap>
+	
+	<select id="getDeliveryStatus" resultMap="DeliveryStatusMap">
+		SELECT 
+		    COUNT(CASE WHEN order_status='주문접수' THEN 1 END) as deliveryStatus1,
+		    COUNT(CASE WHEN order_status='결제완료' THEN 1 END) as deliveryStatus2,
+		    COUNT(CASE WHEN order_status='배송준비중' THEN 1 END) as deliveryStatus3,
+		    COUNT(CASE WHEN order_status='배송중' THEN 1 END) as deliveryStatus4,
+		    COUNT(CASE WHEN order_status='배송완료' THEN 1 END) as deliveryStatus5
+		FROM olive_user u 
+		LEFT JOIN olive_order o ON u.user_id = o.user_id 
+		WHERE u.user_id = #{ userid } 
+			AND order_date BETWEEN SYSDATE - (INTERVAL '1' MONTH) AND SYSDATE
+	</select>
+	
+	<resultMap type="com.blackolive.app.domain.mypage.ProductQnAVO" id="productQnAMap">
+		<result property="productDisplayName" column="productDisplayName" />
+		<result property="productDisplaySrc" column="productDisplaySrc" />
+		<result property="brandName" column="brandName" />
+		<result property="productId" column="productId" />
+		<result property="productName" column="productName" />
+		<result property="categorySmallId" column="categorySmallId" />
+		<result property="categoryMidId" column="categoryMidId" />
+		<result property="qnaQuestion" column="qnaQuestion" />
+		<result property="qnaAnswer" column="qnaAnswer" />
+		<result property="qnaDate" column="qnaDate" />
+		<result property="qnaStatus" column="qnaStatus" />
+	</resultMap>
+	<!-- public List<ProductQnAVO> getproductQnA(String userid) throws ClassNotFoundException, SQLException; -->
+	<select id="getproductQnA" resultMap="productQnAMap">
+	<![CDATA[
+		SELECT  productDisplayName,
+			    productDisplaySrc,
+			    brandName, 
+			    productId,
+			    productName, 
+			    categorySmallId , 
+			    categoryMidId ,
+			    qnaQuestion, 
+			    qnaAnswer,
+			    qnaDate,
+			    qnaStatus,
+			    productDisplayId
+		FROM (
+			SELECT
+			        product_display_name AS productDisplayName,
+			        product_display_src AS productDisplaySrc,
+			        brand_name AS brandName,
+			        product_id AS productId,
+			        product_name AS productName,
+			        cs.category_small_id AS categorySmallId,
+			        cm.category_mid_id AS categoryMidId,
+			        qna_question AS qnaQuestion,
+			        qna_answer AS qnaAnswer,
+			        qna_date AS qnaDate,
+			        qna_status AS qnaStatus,
+			        pd.product_display_id AS productDisplayId,
+			        rank () OVER (PARTITION BY pd.product_display_id ORDER BY product_id ) AS rn
+			FROM qna q
+			        LEFT JOIN product_display pd ON q.product_display_id = pd.product_display_id
+			        LEFT JOIN product_display_img img ON q.product_display_id = img.product_display_id
+			        LEFT JOIN brand b ON pd.brand_id = b.brand_id
+			        RIGHT JOIN product p ON q.product_display_id = p.product_display_id
+			        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id
+			        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id
+			    WHERE user_id = #{userid}
+			    AND qna_date BETWEEN SYSDATE - (INTERVAL '1' MONTH) AND SYSDATE
+			    ORDER BY qna_date desc
+			) subquery
+		WHERE rn = 1 
+		AND ROWNUM <= 4 
+		]]>
+	</select>
+	
+	<select id="getproductQnAmain" resultMap="productQnAMap">
+	<![CDATA[
+		SELECT  productDisplayName,
+			    productDisplaySrc,
+			    brandName, 
+			    productId,
+			    productName, 
+			    categorySmallId , 
+			    categoryMidId ,
+			    qnaQuestion, 
+			    qnaAnswer,
+			    qnaDate,
+			    qnaStatus,
+			    productDisplayId
+		FROM (
+			SELECT
+			        product_display_name AS productDisplayName,
+			        product_display_src AS productDisplaySrc,
+			        brand_name AS brandName,
+			        product_id AS productId,
+			        product_name AS productName,
+			        cs.category_small_id AS categorySmallId,
+			        cm.category_mid_id AS categoryMidId,
+			        qna_question AS qnaQuestion,
+			        qna_answer AS qnaAnswer,
+			        qna_date AS qnaDate,
+			        qna_status AS qnaStatus,
+			        pd.product_display_id AS productDisplayId,
+			        rank () OVER (PARTITION BY pd.product_display_id ORDER BY product_id ) AS rn
+			FROM qna q
+			        LEFT JOIN product_display pd ON q.product_display_id = pd.product_display_id
+			        LEFT JOIN product_display_img img ON q.product_display_id = img.product_display_id
+			        LEFT JOIN brand b ON pd.brand_id = b.brand_id
+			        RIGHT JOIN product p ON q.product_display_id = p.product_display_id
+			        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id
+			        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id
+			    WHERE user_id = #{userid}
+			    AND qna_date BETWEEN SYSDATE - (INTERVAL '1' MONTH) AND SYSDATE
+			    ORDER BY qna_date desc
+			) subquery
+		WHERE rn = 1 
+		]]>
+	</select>
+	
+	
+	<!-- public List<ProductQnAVO> getproductQnAwithDate(String userid, String startdate, String enddate) throws ClassNotFoundException, SQLException; -->
+	<select id="getproductQnAwithDate" resultMap="productQnAMap">
+		SELECT  productDisplayName,
+			    productDisplaySrc,
+			    brandName, 
+			    productId,
+			    productName, 
+			    categorySmallId , 
+			    categoryMidId ,
+			    qnaQuestion, 
+			    qnaAnswer,
+			    qnaDate,
+			    qnaStatus,
+			    productDisplayId
+		FROM (
+			SELECT
+			        product_display_name AS productDisplayName,
+			        product_display_src AS productDisplaySrc,
+			        brand_name AS brandName,
+			        product_id AS productId,
+			        product_name AS productName,
+			        cs.category_small_id AS categorySmallId,
+			        cm.category_mid_id AS categoryMidId,
+			        qna_question AS qnaQuestion,
+			        qna_answer AS qnaAnswer,
+			        qna_date AS qnaDate,
+			        qna_status AS qnaStatus,
+			        pd.product_display_id AS productDisplayId,
+			        rank () OVER (PARTITION BY pd.product_display_id ORDER BY product_id ) AS rn
+			FROM qna q
+			        LEFT JOIN product_display pd ON q.product_display_id = pd.product_display_id
+			        LEFT JOIN product_display_img img ON q.product_display_id = img.product_display_id
+			        LEFT JOIN brand b ON pd.brand_id = b.brand_id
+			        RIGHT JOIN product p ON q.product_display_id = p.product_display_id
+			        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id
+			        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id
+			    WHERE user_id = #{userid}
+			    AND qna_date between to_date( #{ startdate } ,'YYYY-MM-DD' ) and to_date( #{enddate} , 'YYYY-MM-DD')
+			    ORDER BY qna_date desc
+			) subquery
+		WHERE rn = 1 
+	</select>
+	
+<!--  public List<PersonalAskVO> getAskList( @Param("userId") String userId ) throws ClassNotFoundException, SQLException; -->	
+	<select id="getAskList" resultType="PersonalAskVO">
+		SELECT personal_ask_status, personal_ask_content, personal_ask_date
+    	FROM personal_ask
+    	WHERE user_id =#{userId}
+    	<![CDATA[
+         	 AND ROWNUM <=4
+        ]]>
+        ORDER BY personal_ask_id DESC
+	</select>
+	
+</mapper>

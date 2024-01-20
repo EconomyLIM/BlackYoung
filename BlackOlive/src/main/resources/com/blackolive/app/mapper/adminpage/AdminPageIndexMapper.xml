@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.adminpage.AdminPageIndexMapper">
+
+	<!-- // 월별 판매량 갖고오기
+	public List<SalesPerMonthDTO> getSalesPerMonth(@Param("brandId") String brandId); -->
+	
+	<select id="getSalesPerMonth" resultType="SalesPerMonthDTO">
+		SELECT 
+		 to_char(payment_date, 'mm') as "month"
+		,SUM(payment_price) as "monthlySales"
+		FROM payment p 
+		LEFT JOIN refund r ON p.order_id = r.order_id
+		WHERE TO_CHAR(payment_date, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY')
+			<if test="brandId != null">
+				AND brandId = #{brandId}
+			</if>
+		AND r.refund_id IS NULL
+		GROUP BY to_char(payment_date, 'mm')
+		ORDER BY to_char(payment_date, 'mm')
+	</select>
+	
+	<!-- // 일별 판매량 갖고오기 getSalesPerday
+	public List<SalesPerDayDTO> getSalesPerDay (@Param("brandId") String brandId); -->
+	<select id="getSalesPerDay" resultType="SalesPerDayDTO">
+		<![CDATA[
+		WITH MonthDays AS (
+  			SELECT LEVEL AS day
+  			FROM DUAL
+  			CONNECT BY LEVEL <= EXTRACT(DAY FROM LAST_DAY( SYSDATE ))
+			)
+		SELECT MonthDays.day as "day", 
+		COALESCE(daysales."daylysales", 0) as "daylySales"
+		FROM MonthDays
+		LEFT JOIN (
+  			SELECT TO_CHAR(order_date, 'dd') AS day
+       		, SUM(op.past_product_price * op.product_cnt) AS "daylysales"
+  			FROM olive_order oo
+  			JOIN order_product op ON oo.order_id = op.order_id
+  			JOIN productcontainer2 pdc2 ON op.product_id = pdc2.product_id
+  			LEFT JOIN refund r ON oo.order_id = r.order_id
+  			WHERE TO_CHAR(ORDER_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+  			]]>
+			<if test="brandId != null">
+				AND brandId = #{brandId}
+			</if>
+				<![CDATA[
+			AND r.refund_id IS NULL
+  			GROUP BY TO_CHAR(order_date, 'dd')
+  			ORDER BY TO_CHAR(order_date, 'dd')
+			) daysales
+		ON MonthDays.day = daysales.day
+		ORDER BY MonthDays.day
+				]]>
+	</select>
+	
+	<!-- // 상품 표시 id에 쓸 시퀀스 미리 갖고오기
+	public int getproductIdSeq();  -->
+	
+	<select id="getproductIdSeq" resultType="int">
+		SELECT product_display_seq.nextval FROM dual
+	</select>
+	
+	<select id="productSeq" resultType="int">
+		SELECT product_seq.nextval FROM dual
+	</select>
+	
+	<!-- // 상품 표시 데이터 insert insertProductDisplay
+	public int insertProductDisplay (@Param("productDisplay") ProductDisplayDTO productDisplay); -->
+	<insert id="insertProductDisplay">
+		INSERT INTO product_display (PRODUCT_DISPLAY_ID, BRAND_ID, PRODUCT_DISPLAY_NAME, PRODUCT_DISPLAY_LIKE, PRODUCT_DISPLAY_OPTION, PRODUCT_DISPLAY_REGDATE)
+		VALUES(#{productDisplay.productDisplayId}, #{productDisplay.brandId}, #{productDisplay.productDisplayName},0 ,#{productDisplay.productDisplayOption}, SYSDATE )
+	</insert>
+	
+	<!-- 	// 상품 데이터 insert
+	public int insertProduct(@Param("product") List<ProductDTO> product); -->
+	<insert id="insertProduct" parameterType="java.util.List">
+		 
+		 <foreach collection="product" item="product" index="idx" separator=";" open="DECLARE BEGIN" close="; END;">
+    		  INSERT INTO product (
+             PRODUCT_ID
+      ,      PRODUCT_DISPLAY_ID
+      ,      CATEGORY_SMALL_ID
+      ,      PRODUCT_NAME
+      ,      PRODUCT_PRICE
+      ,      PRODUCT_STOCK
+      )
+      SELECT 
+      		#{product.productId},
+			#{product.productDisplayId},
+			#{product.categorySmallId},
+			#{product.productName},
+			#{product.productPrice},
+			#{product.productStock} 
+      FROM DUAL
+		</foreach>
+	</insert>
+	
+	<!-- // 상품 표시 이미지 insert
+	public ProductDisplayImgDTO insertProductDisplayImg(@Param("productDisplayImgDTO")ProductDisplayImgDTO productDisplayImgDTO); -->
+	
+	<insert id="insertProductDisplayImg">
+		INSERT INTO product_display_img
+		VALUES(product_display_img_seq.nextval, #{productDisplayImgDTO.productDisplayId}, #{productDisplayImgDTO.productDisplaySrc})
+	</insert>
+	
+	<!-- // 상품 표시 설명 이미지 insert
+	public int insertProductDisplayInfoImgs(@Param("displayInfoDTOs") List<ProductDisplayInfoDTO> displayInfoDTOs); -->
+	<insert id="insertProductDisplayInfoImgs" parameterType="java.util.List">
+	
+			 <foreach collection="displayInfoDTOs" item="displayInfoDTOs" index="idx" separator=";" open="DECLARE BEGIN" close="; END;">
+    		  INSERT INTO product_explaination_img (
+    		  PRODUCT_EXPLAINATION_IMG_ID,
+    		  PRODUCT_DISPLAY_ID,
+    		  PRODUCT_EXPLAINATION_IMG_SRC
+			)
+      		SELECT 
+			product_explaination_img_seq.nextval,
+			#{displayInfoDTOs.productDisplayId},
+			#{displayInfoDTOs.productExplainationImgSrc}
+      		FROM DUAL
+		</foreach>
+	</insert>
+	<!-- // 상품 이미지 insert
+	public int insertProductImgs(@Param("productImgDTOs") List<ProductImgDTO> productImgDTOs); -->
+	
+	<insert id="insertProductImgs" parameterType="java.util.List">
+	
+	 <foreach collection="productImgDTOs" item="productImgDTOs" index="idx" separator=";" open="DECLARE BEGIN" close="; END;">
+    		  INSERT INTO product_img (
+    		  PRODUCT_IMG_ID,
+    		  PRODUCT_ID,
+    		  PRODUCT_IMG_SRC
+			)
+      		SELECT 
+			product_img_seq.nextval,
+			#{productImgDTOs.productId},
+			#{productImgDTOs.productImgSrc}
+      		FROM DUAL
+		</foreach>
+
+	</insert>
+	
+	<select id="getPromotionDiscountSeq" resultType="int">
+		SELECT promotion_discount_seq.nextval FROM dual
+	</select>
+	<select id="getPromotionCouponSeq" resultType="int">
+		SELECT promotion_coupon_seq.nextval FROM dual
+	</select>
+	<select id="getPromotionPresentSeq" resultType="int">
+		SELECT promotion_present_seq.nextval FROM dual
+	</select>
+	
+	<!-- // 할인 프로모션 insert
+	public String insertDiscountPromotion(@Param("promotionDiscountDTO") PromotionDiscountDTO promotionDiscountDTO); -->
+	
+	<insert id="insertDiscountPromotion">
+			INSERT INTO promotion_discount 
+			VALUES (
+			#{promotionDiscountId},
+			 #{promotionDiscountDTO.promotionDiscountPrice}, 
+			 #{promotionDiscountDTO.promotionDiscountStartDay}, 
+			 #{promotionDiscountDTO.promotionDiscountEndDay}
+			 )
+	</insert>
+	
+<!-- 	// 쿠폰 프로모션 insert
+	public String insertCouponPromotion(@Param("promotionCouponDTO") PromotionCouponDTO promotionCouponDTO); -->
+	
+	<insert id="insertCouponPromotion" keyProperty="id">
+			INSERT INTO promotion_coupon 
+			VALUES (#{promotionCouponId},
+			 #{promotionCouponDTO.promotionCouponName},
+			 #{promotionCouponDTO.promotionCouponKind},
+			 #{promotionCouponDTO.promotionCouponDiscount}, 
+			 #{promotionCouponDTO.promotionCouponStartDay}, 
+			 #{promotionCouponDTO.promotionCouponEndDay}
+			 )
+	</insert>
+	
+<!-- 	// 증정 프로모션 insert
+	public String insertPresentPromotion(@Param("promotionPresentDTO") PromotionPresentDTO promotionPresentDTO); -->
+	<insert id="insertPresentPromotion" keyProperty="id" >
+			INSERT INTO promotion_present 
+			VALUES (
+			#{promotionPresentId},
+			 #{promotionPresentDTO.promotionPresentKind},
+			 #{promotionPresentDTO.promotionPresentName},
+			 #{promotionPresentDTO.promotionPresentStartDay}, 
+			 #{promotionPresentDTO.promotionPresentEndDay}
+			 )
+	</insert>
+	
+	<!-- // 프로모션 insert
+	public int insertPromotion(@Param("productDisplayId") String productDisplayId
+			, @Param("promotionDiscountId") String promotionDiscountId
+			, @Param("promotionCouponId")String promotionCouponId
+			, @Param("promotionPresentId")String promotionPresentId); -->
+			
+	<insert id="insertPromotion">
+		INSERT INTO product_promotion
+		VALUES ('pmd'|| product_promotion_seq.nextval
+		, #{productDisplayId}
+		, #{promotionDiscountId}
+		, #{promotionCouponId}
+		, #{promotionPresentId})
+	
+	</insert>
+	
+	<!-- // 구매정보 insert
+	public int insertBuyInfo(@Param("productDisplayId") String productDisplayId,@Param("buyInfoDTOs") List<BuyInfoDTO> buyInfoDTOs); -->
+	<insert id="insertBuyInfo" parameterType="java.util.Map">
+	
+	 <foreach collection="buyInfoDTOs" item="buyInfoDTOs" index="idx" separator=";" open="DECLARE BEGIN" close="; END;">
+    		  INSERT INTO buyinfo_content (
+    		  BUYINFO_CONTENT_ID,
+    		  PRODUCT_DISPLAY_ID,
+    		  BUYINFO_TITLE_ID,
+    		  BUYINFO_CONTENT
+			)
+      		SELECT 
+			buyinfo_content_seq.nextval,
+			#{productDisplayId},
+			#{buyInfoDTOs.buyinfoTitleId},
+			#{buyInfoDTOs.buyinfoTitle}
+      		FROM DUAL
+		</foreach>
+
+	</insert>
+	
+	
+	<!-- ================= Rest Mapper ======================= -->
+	
+	<!-- // 대분류 카테고리 갖고오는 작업 getLargeCategory
+	public List<CategoryLargeDTO> getLargeCategory(@Param("categoryTotalId") int categoryTotalId) throws SQLException; -->
+	<select id="getLargeCategory" resultType="categoryLarge">
+		SELECT * FROM category_large
+		WHERE category_total_id = #{categoryTotalId}
+	</select>
+	
+	<!-- // 중분류 카테고리 갖고오는 작업
+	public List<CategoryMidDTO> getMidCategory (@Param("categoryLargeId") int categoryLargeId); -->
+	<select id="getMidCategory" resultType="categoryMid">
+		SELECT * FROM category_mid
+		WHERE category_large_Id = #{categoryLargeId} 
+	</select>
+	
+	<!-- // 소분류 카테고리 갖고오는 작업
+	public List<CategorySmallDTO> getSmallCategory (@Param("categoryMidId") int categoryMidId); -->
+	<select id="getSmallCategory" resultType="categorySmall">
+		SELECT * FROM category_small
+		WHERE category_Mid_Id = #{categoryMidId} 
+	</select>
+	
+	<!-- // 구매 정보 갖고오는 작업 getBuyInfo
+	public List<BuyInfoDTO> getBuyInfo (@Param("buyinfoCategory") int buyinfoCategory); -->
+	
+	<select id="getBuyInfo" resultType="BuyInfoDTO">
+		SELECT BUYINFO_TITLE_ID, BUYINFO_TITLE FROM buyinfo_title
+		WHERE BUYINFO_CATEGORY = #{buyinfoCategory}
+	</select>
+	
+	
+
+</mapper>

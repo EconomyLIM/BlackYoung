@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.adminpage.OrderCheckMapper">
+
+<!-- // 총 페이지 수 구하기
+	public int getTotalPages(); -->
+	<select id="getTotalPages" resultType="int">
+		SELECT CEIL(count(*)/10)
+		FROM olive_order oo
+		JOIN order_product op ON oo.order_id = op.order_id
+		JOIN product p ON p.product_id = op.product_id
+		JOIN product_display pd ON p.product_display_id = pd.product_display_id
+		ORDER BY oo.order_id
+	</select>
+
+<!-- // 주문 리스트 갖고오기
+	public List<OrderCheckMapper> getOrderList(); -->
+	<select id="getOrderList" resultType="OrderCheckDTO">
+		SELECT *
+        FROM (
+            SELECT ROWNUM no, t.*
+            FROM (
+				SELECT oo.order_id, user_id, delivery_id, TO_CHAR(order_date, 'yyyy-mm-dd hh:mi:dd') orderDate, today_option, packaging_option, order_status, delivery_company, invoice_number, TO_CHAR(send_date, 'yyyy-mm-dd hh:mi:dd') sendDate
+				FROM olive_order oo
+				JOIN order_product op ON oo.order_id = op.order_id
+				JOIN product p ON p.product_id = op.product_id
+				JOIN product_display pd ON p.product_display_id = pd.product_display_id
+				<if test="status != null">
+					WHERE order_status = #{status}
+				</if>
+				ORDER BY oo.order_id
+				) t
+        	) b
+        WHERE b.no BETWEEN #{begin} AND #{end}
+	</select>
+	
+	<!-- // 주문접수 > 주문 확인
+	public int orderConfirm (@Param("orderId") String[] orderId); -->
+	<update id="orderConfirm">
+		UPDATE olive_order
+		SET order_status = '주문확인'
+		<if test="orderId != null">
+				WHERE order_id IN 
+				<foreach collection="orderId" separator="," open="(" close=")" item="orderId">
+					#{orderId}
+				</foreach> 
+		</if>
+	</update>
+
+
+</mapper>

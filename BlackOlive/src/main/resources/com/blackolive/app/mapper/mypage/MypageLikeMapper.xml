@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.mypage.MypageLikeMapper">
+
+
+	<!-- public List<ProductLikeVO> getproductlikeList(String userid) throws ClassNotFoundException, SQLException; -->
+	<resultMap type="com.blackolive.app.domain.mypage.ProductLikeVO" id="productLikeMap">
+		<id property="productDisplayId" column="productDisplayId"/>
+		<result property="productDisplaySrc" column="productDisplaySrc"/>		
+		<result property="brandName" column="brandName"/>		
+		<result property="productDisplayName" column="productDisplayName"/>		
+		<result property="categorySmallId" column="categorySmallId"/>		
+		<result property="categoryMidId" column="categoryMidId"/>		
+		<result property="productPrice" column="productPrice"/>		
+		<result property="afterPrice" column="afterPrice"/>		
+		<result property="productDisplayId" column="productDisplayId"/>		
+		<result property="productId" column="productId"/>		
+		<result property="promotionCoupon" column="promotionCoupon"/>		
+		<result property="promotionDiscount" column="promotionDiscount"/>		
+		<result property="promotionPresent" column="promotionPresent"/>		
+		<result property="stock" column="stock"/>			
+	</resultMap>
+	<select id="getproductlikeList" resultMap="productLikeMap">
+		<![CDATA[
+			SELECT *
+			FROM (
+			    SELECT
+			        product_display_src AS productDisplaySrc,
+			        b.brand_name AS brandName,
+			        pd.product_display_name AS productDisplayName,
+			        cs.category_small_id AS categorySmallId,
+			        cm.category_mid_id AS categoryMidId,
+			        p.product_price AS productPrice,
+			        NVL(
+			            CASE
+			                WHEN prc.PROMOTION_COUPON_KIND = 1 THEN p.product_price + prc.promotion_coupon_discount
+			                WHEN prc.promotion_coupon_kind = 2 THEN p.product_price * (1 - prc.promotion_coupon_discount)
+			                ELSE p.product_price
+			            END, 0
+			        ) +
+			        NVL(prd.promotion_discount_price, 0) AS afterPrice,
+			        pd.product_display_id AS productDisplayId,
+			        p.product_id AS productId,
+			        CASE
+			            WHEN prc.promotion_coupon_start_day <= SYSDATE AND prc.promotion_coupon_end_day >= SYSDATE THEN '1'
+			            ELSE '0'
+			        END AS promotionCoupon,
+			        CASE
+			            WHEN prd.promotion_discount_start_day <= SYSDATE AND prd.promotion_discount_end_day >= SYSDATE THEN '1'
+			            ELSE '0'
+			        END AS promotionDiscount,
+			        CASE
+			            WHEN prp.promotion_present_start_day <= SYSDATE AND prp.promotion_present_end_day >= SYSDATE THEN '1'
+			            ELSE '0'
+			        END AS promotionPresent,
+			        CASE
+			            WHEN ss.store_id IS NOT NULL THEN '1'
+			            ELSE '0'
+			        END AS stock,
+			        ROW_NUMBER() OVER (PARTITION BY pd.product_display_id ORDER BY pd.product_display_id) AS rowNumber
+			    FROM
+			        product_display pd
+			        JOIN product_like pl ON pd.product_display_id = pl.product_display_id
+			        JOIN brand b ON pd.brand_id = b.brand_id
+			        JOIN product p ON p.product_display_id = pd.product_display_id
+			        JOIN product_display_img pdi ON pdi.product_display_id = pd.product_display_id
+			        JOIN product_promotion pm ON pd.product_display_id = pm.product_display_id
+			        LEFT JOIN promotion_coupon prc ON pm.promotion_coupon_id = prc.promotion_coupon_id
+			        LEFT JOIN promotion_discount prd ON prd.promotion_discount_id = pm.promotion_discount_id
+			        LEFT JOIN promotion_present prp ON prp.promotion_present_id = pm.promotion_present_id
+			        LEFT JOIN store_stock ss ON p.product_id = ss.product_id
+			        LEFT JOIN category_small cs ON p.category_small_id = cs.category_small_id
+			        LEFT JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id
+			    WHERE
+			        user_id = #{user_id}
+			)
+			WHERE
+    		rowNumber = 1 AND ROWNUM <= 4 
+		]]>
+	</select>
+	
+	<!-- public int deleteproductLike(String userid, String productDisplayId) throws ClassNotFoundException, SQLException; -->
+	<delete id="deleteproductLike">
+		DELETE product_like
+	    WHERE product_display_id = #{productDisplayId}
+	    AND user_id = #{ userid }
+	</delete>
+	
+	<!-- public int deleteproductLikeAll(String userid) throws ClassNotFoundException, SQLException; -->
+	<delete id="deleteproductLikeAll">
+		DELETE product_like
+		WHERE user_id = #{ userid }
+	</delete>
+	
+	<!-- public List<BrandLikeVO> getbrandLikeList(String userid) throws ClassNotFoundException, SQLException; -->
+	<resultMap type="com.blackolive.app.domain.mypage.BrandLikeVO" id="brandLikeMap">
+		<id property="brandId" column="brandId"/>
+		<result property="brandName" column="brandName"/>
+		<result property="brandLike" column="brandLike"/>
+		<result property="brandDisplaySrc" column="brandDisplaySrc"/>
+	</resultMap>
+	<select id="getbrandLikeList" resultMap="brandLikeMap">
+		SELECT bl.brand_id AS brandId,
+				brand_name AS brandName,
+				brand_like AS brandLike,
+				brand_img_src AS brandDisplaySrc
+	    FROM brand_like bl 
+	        LEFT JOIN brand b ON bl.brand_id = b.brand_id
+	        LEFT JOIN brand_img bi ON bl.brand_id = bi.brand_id
+	    WHERE user_id = #{ userid }
+	</select>
+	
+	<!-- public int deletebrandLike(String userid, String brandId) throws ClassNotFoundException, SQLException; -->
+	<delete id="deletebrandLike">
+		DELETE brand_like
+	    WHERE brand_id = #{ brandId }
+	    AND user_id = #{ userid }
+	</delete>
+	
+	<!-- public int deletebrandLikeAll(String userid) throws ClassNotFoundException, SQLException; -->
+		<delete id="deletebrandLikeAll">
+		DELETE brand_like
+	    WHERE user_id = #{ userid }
+	</delete>
+
+
+</mapper>

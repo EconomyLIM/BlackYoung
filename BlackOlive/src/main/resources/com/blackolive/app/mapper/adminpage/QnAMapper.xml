@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.adminpage.QnAMapper">
+
+
+	<select id="getQnaList" resultType="com.blackolive.app.domain.adminpage.QnaListDTO">
+		SELECT QNA_ID, QNA_QUESTION,qna.PRODUCT_DISPLAY_ID, product_display_name,  user_id, QNA_STATUS,QNA_DATE from qna
+		JOIN product_display pd ON qna.product_display_id = pd.product_display_id
+	</select>
+	
+	<select id="getQnA" resultType="com.blackolive.app.domain.adminpage.QnaListDTO">
+		SELECT * FROM qna
+		WHERE qna_id = #{qnaId}
+	</select>
+
+</mapper>

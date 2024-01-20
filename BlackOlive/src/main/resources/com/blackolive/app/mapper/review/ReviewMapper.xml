@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.review.ReviewMapper">
+
+<resultMap type="com.blackolive.app.domain.review.ReviewDTO" id="reviewMap">
+       <id property="reviewId" column="review_id"/>
+		<result property="reviewId" column="review_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="productDisplayId" column="product_display_id"/>
+		<result property="reviewLike" column="review_like"/>
+		<result property="reviewContent" column="review_content"/>
+		<result property="reviewGrade" column="review_grade"/>
+		<result property="reviewRegdate" column="review_regdate"/>
+		<result property="reviewPoll1" column="review_poll_1"/>
+		<result property="reviewPoll2" column="review_poll_2"/>
+		<result property="reviewPoll3" column="review_poll_3"/>
+		<result property="productId" column="product_id"/>
+		<result property="nickname" column="nickname"/>
+		<result property="profileImg" column="profile_img"/>
+		<result property="skintoneName" column="skintone_name"/>
+		<result property="skintypeName" column="skintype_name"/>
+		<collection property="skinTrouble" resultMap="skinTroubleMap">
+		</collection>
+		<collection property="reviewimg" resultMap="reviewimgMap"></collection>
+	</resultMap>
+	<resultMap type="com.blackolive.app.domain.review.SkintbDTO" id="skinTroubleMap">
+		<result property="userId2" column="user_id_2"/>
+		<result property="skintroubleName" column="skintrouble_name"/>
+	</resultMap>
+	<resultMap type="com.blackolive.app.domain.review.ReviewImgDTO" id="reviewimgMap">
+		<result property="reviewImgId" column="review_img_id"/>
+		<result property="reviewId" column="review_id"/>
+		<result property="reviewImgSrc" column="review_img_src"/>
+	</resultMap>
+	
+
+ <!-- 리뷰 목록 -->
+	<!-- List<ReviewDTO> reviewList( String productDisplayId, String gdasSort, String productId, int currentPage, int numberPerPage); -->
+	<select id="reviewList"  resultMap="reviewMap">
+		SELECT t.*
+	FROM (
+    SELECT
+        DENSE_RANK() OVER (ORDER BY r.review_id) AS no,
+        r.REVIEW_ID,r.USER_ID,r.PRODUCT_DISPLAY_ID,r.REVIEW_LIKE,r.REVIEW_CONTENT,r.REVIEW_GRADE,r.REVIEW_REGDATE,r.REVIEW_POLL_1,r.REVIEW_POLL_2,r.REVIEW_POLL_3,r.PRODUCT_ID,
+        up.NICKNAME,up.PROFILE_CONTENT,up.SKINTONE_ID,up.SKINTYPE_ID,up.PROFILE_IMG,up.FOLLOWER,up.FOLLOWING,
+        ps.SKINTONE_NAME,
+        pf.SKINTYPE_NAME,
+        pt.SKINTROUBLE_ID,pt.SKINTROUBLE_NAME,
+        ri.review_img_id, ri.review_img_src
+    FROM
+        review r
+        LEFT JOIN userprofile up ON r.user_id = up.user_id
+        LEFT JOIN profile_SKINTONE ps ON up.skintone_id = ps.skintone_id
+        LEFT JOIN Profile_SKINTYPE pf ON up.skintype_id = pf.skintype_id
+        LEFT JOIN userprofile_skintrouble us ON us.user_id = r.user_id 
+        LEFT JOIN profile_skintrouble pt ON us.skintrouble_id = pt.skintrouble_id
+        LEFT JOIN review_img ri ON r.review_id = ri.review_id
+        where
+        <choose>
+        <when test='productId == "ALL"'>
+             product_display_id = #{productDisplayId}
+        </when>
+        <otherwise>
+             product_display_id = #{productDisplayId} AND product_id = #{productId}
+        </otherwise>
+    </choose>
+    	<if test='searchType_1 == "N"'>
+    		AND review_img_src is null
+    	</if>
+        <choose>
+        <when test='gdasSort == 2'>
+            order by review_regdate DESC
+        </when>
+        <otherwise>
+           order by review_like DESC
+        </otherwise>
+    </choose>
+    )t 			 where t.no  BETWEEN #{currentPage} AND #{numberPerPage}
+     
+               
+    
+	
+	</select>
+<!--   List<ReviewDTO> reviewListAll(@Param("productDisplayId") String productDisplayId,@Param("productId") String productId);  -->
+	<select id="reviewListAll" resultMap="reviewMap">
+		SELECT
+        DENSE_RANK() OVER (ORDER BY r.review_id) AS no,
+        r.REVIEW_ID,r.USER_ID,r.PRODUCT_DISPLAY_ID,r.REVIEW_LIKE,r.REVIEW_CONTENT,r.REVIEW_GRADE,r.REVIEW_REGDATE,r.REVIEW_POLL_1,r.REVIEW_POLL_2,r.REVIEW_POLL_3,r.PRODUCT_ID,
+        up.NICKNAME,up.PROFILE_CONTENT,up.SKINTONE_ID,up.SKINTYPE_ID,up.PROFILE_IMG,up.FOLLOWER,up.FOLLOWING,
+        ps.SKINTONE_NAME,
+        pf.SKINTYPE_NAME,
+        pt.SKINTROUBLE_ID,pt.SKINTROUBLE_NAME,
+        ri.review_img_id, ri.review_img_src
+    FROM
+        review r
+        LEFT JOIN userprofile up ON r.user_id = up.user_id
+        LEFT JOIN profile_SKINTONE ps ON up.skintone_id = ps.skintone_id
+        LEFT JOIN Profile_SKINTYPE pf ON up.skintype_id = pf.skintype_id
+        LEFT JOIN userprofile_skintrouble us ON us.user_id = r.user_id 
+        LEFT JOIN profile_skintrouble pt ON us.skintrouble_id = pt.skintrouble_id
+        LEFT JOIN review_img ri ON r.review_id = ri.review_id
+        <choose>
+        <when test='productId == "ALL"'>
+            where product_display_id = #{productDisplayId}
+        </when>
+        <otherwise>
+            where product_display_id = #{productDisplayId} AND product_id = #{productId}
+        </otherwise>
+    </choose>
+	</select>
+	
+<!-- 
+	//리뷰 이미지
+	List<ReviewImgDTO> reviewimg( String reviewId);
+	-->
+	<select id="reviewimg" resultType="ReviewImgDTO">
+		select review_img_id, review_id, review_img_src from review_img where review_id = #{reviewId}
+	</select>
+	<!--
+	// 리뷰 단일
+	ReviewDTO review( String reviewId); -->
+	<select id="review" resultMap ="reviewMap">
+		 SELECT
+        DENSE_RANK() OVER (ORDER BY r.review_id) AS no,
+        r.REVIEW_ID,r.USER_ID,r.PRODUCT_DISPLAY_ID,r.REVIEW_LIKE,r.REVIEW_CONTENT,r.REVIEW_GRADE,r.REVIEW_REGDATE,r.REVIEW_POLL_1,r.REVIEW_POLL_2,r.REVIEW_POLL_3,r.PRODUCT_ID,
+        up.NICKNAME,up.PROFILE_CONTENT,up.SKINTONE_ID,up.SKINTYPE_ID,up.PROFILE_IMG,up.FOLLOWER,up.FOLLOWING,
+        ps.SKINTONE_NAME,
+        pf.SKINTYPE_NAME,
+        pt.SKINTROUBLE_ID,pt.SKINTROUBLE_NAME,
+        ri.review_img_id, ri.review_img_src
+    FROM
+        review r
+        LEFT JOIN userprofile up ON r.user_id = up.user_id
+        LEFT JOIN profile_SKINTONE ps ON up.skintone_id = ps.skintone_id
+        LEFT JOIN Profile_SKINTYPE pf ON up.skintype_id = pf.skintype_id
+        LEFT JOIN userprofile_skintrouble us ON us.user_id = r.user_id 
+        LEFT JOIN profile_skintrouble pt ON us.skintrouble_id = pt.skintrouble_id
+        LEFT JOIN review_img ri ON r.review_id = ri.review_id
+        where r.review_id= #{reviewId}
+	</select>
+	
+	<!-- // 상품 점수
+	ReviewScoreDTO reviewScore( String productDisplayId, String productId); -->
+	<select id="reviewScore" resultType="com.blackolive.app.domain.review.ReviewScoreDTO">
+	SELECT 
+    ROUND(COALESCE(SUM(CASE WHEN review_grade = 5 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade_5_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_grade = 4 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade_4_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_grade = 3 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade_3_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_grade = 2 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade_2_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_grade = 1 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade_1_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_1 = 3 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade1_3_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_1 = 2 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade1_2_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_1 = 1 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade1_1_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_2 = 3 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade2_3_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_2 = 2 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade2_2_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_2 = 1 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade2_1_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_3 = 3 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade3_3_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_3 = 2 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade3_2_ratio, 
+    ROUND(COALESCE(SUM(CASE WHEN review_poll_3 = 1 THEN 1 ELSE 0 END) / COUNT(*) * 100, 0), 1) AS grade3_1_ratio, 
+    ROUND(AVG(COALESCE(review_grade, 0)), 1) AS averagegrade 
+	FROM review
+				where
+				<choose>
+        <when test='productId == "ALL"'>
+             product_display_id = #{productDisplayId}
+        </when>
+        <otherwise>
+             product_display_id = #{productDisplayId} AND product_id = #{productId}
+        </otherwise>
+    </choose>
+	</select>
+	<!-- 
+	//페이징 처리
+	// 전체 페이지 구하기
+	int getTotalReviewPages(String productDisplayId, String productId, int numberPerPage)  throws SQLException;
+		
+	int getTotalReviewRecords(String productDisplayId, String productId)  throws SQLException;
+	 -->
+	 
+	 <select id="getTotalReviewPages" resultType="int">
+	 	SELECT CEIL( COUNT(*)/ #{numberPerPage} ) 
+				 FROM review 
+		<choose>
+        <when test='productId == "ALL"'>
+            where product_display_id = #{productDisplayId}
+        </when>
+        <otherwise>
+            where product_display_id = #{productDisplayId} AND product_id = #{productId}
+        </otherwise>
+    </choose>
+	 </select>
+	 
+	 <select id="getTotalReviewRecords" resultType="int">
+	 	SELECT COUNT(*) 
+				 FROM review 
+<choose>
+        <when test='productId == "ALL"'>
+            where product_display_id = #{productDisplayId}
+        </when>
+        <otherwise>
+            where product_display_id = #{productDisplayId} AND product_id = #{productId}
+        </otherwise>
+    </choose>
+	 </select>
+</mapper>

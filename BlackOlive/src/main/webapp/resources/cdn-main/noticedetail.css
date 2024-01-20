@@ -1,0 +1,47 @@
+@charset "UTF-8";
+
+strong.FG03{
+	    word-spacing: -1px;
+    font-family: Montserrat,-apple-system,NotoSansCJKkr,AppleSDGothicNeo,Roboto,dotum,"돋움",sans-serif;
+    letter-spacing: -.04em;
+    -webkit-font-smoothing: antialiased;
+    border-spacing: 0;
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    position: relative;
+    top: -1px;
+    margin: 0 15px 0 0;
+    display: inline-block;
+    width: 70px;
+    height: 20px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    line-height: 20px;
+    background: #ed95b7;
+}
+
+strong.FG01{
+	    word-spacing: -1px;
+    font-family: Montserrat,-apple-system,NotoSansCJKkr,AppleSDGothicNeo,Roboto,dotum,"돋움",sans-serif;
+    letter-spacing: -.04em;
+    -webkit-font-smoothing: antialiased;
+    border-spacing: 0;
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    position: relative;
+    top: -1px;
+    margin: 0 15px 0 0;
+    display: inline-block;
+    width: 70px;
+    height: 20px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    line-height: 20px;
+    background: #9bce26;
+}

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.blackolive.app.mapper.search.SearchMapper">
+
+	<!-- // 검색된 상품 리스트
+	public List<ProductContainer> searchProductList();  -->
+	<select id="searchProductList" resultType="ProductContainer">
+		 SELECT *
+        FROM (
+            SELECT ROWNUM no, t.*
+            FROM (
+                SELECT productcontainer.*
+                ,CASE 
+        		WHEN pl.PRODUCT_DISPLAY_ID IS NOT NULL THEN 1
+        		ELSE 0
+    			END AS productLikeState
+               	 FROM productcontainer 
+					LEFT JOIN product_like pl ON productcontainer.PRODUCT_DISPLAY_ID = pl.PRODUCT_DISPLAY_ID 
+					 <if test="userId != null">
+						 AND pl.user_id = #{userId}
+                    </if>
+                    
+                    WHERE
+                     <foreach collection="searchWord" item="searchWord" separator=" AND ">
+            				product_display_name Like '%${searchWord}%'
+        				</foreach>
+                     
+                     <![CDATA[
+                    AND afterprice >= #{minPrice}
+                    AND afterprice <= #{maxPrice}
+                    ]]>
+                        <if test="categorySmallId != null and categorySmallId.length > 0">
+                        AND   category_small_id = #{categorySmallId}
+                        </if>
+                    
+                    <if test="brandId != null and brandId.length > 0">
+                        AND brand_id IN
+                        <foreach collection="brandId" item="brandId" open="(" close=")" separator=",">
+                            #{brandId}
+                        </foreach>
+                    </if>
+					<if test='quickyn == "Y"'>
+						AND todaypickupflag = 1
+					</if>
+                <choose>
+                    <when test='sort == "1"'>
+                        ORDER BY product_display_like DESC
+                    </when>
+                    <when test='sort == "2"'>
+                        ORDER BY product_display_regdate DESC
+                    </when>
+                    <when test='sort == "3"'>
+                        ORDER BY ordercnt DESC
+                    </when>
+                    <when test='sort == "4"'>
+                        ORDER BY afterprice ASC
+                    </when>
+                    <when test='sort == "5"'>
+                        ORDER BY (minprice - afterprice) / minprice * 100 DESC
+                    </when>
+                </choose>
+            ) t
+        ) b
+        WHERE b.no BETWEEN #{begin} AND #{end}
+		 
+	</select>
+	
+	
+	<!-- // 검색된 상품의 스몰 카테고리
+	public List<CategorySmallDTO> searchCategorySmall(@Param("searchWord") String searchWord); -->
+	<select id="searchCategorySmall" resultType="categorySmall">
+	select Distinct p.category_small_id, cm.category_small_name 
+	from PRODUCTCONTAINER p 
+	join category_small cm on p.category_small_id = cm.category_small_id  
+	WHERE
+                     <foreach collection="searchWord" item="searchWord" separator=" AND ">
+            				product_display_name Like '%${searchWord}%'
+        				</foreach>
+	</select>
+	
+	<!-- // 검색된 상품의 브랜드 목록
+	public List<BrandDTO> searchBrandList(@Param("searchWord") String searchWord, @Param("categorySmallId")String categorySmallId); -->
+	<select id="searchBrandList" resultType="BrandDTO">
+		SELECT DISTINCT b.brand_id, b.brand_name
+		FROM brand b
+		JOIN product_display pd ON b.brand_id = pd.brand_id
+		JOIN product p ON pd.product_display_id = p.product_display_id
+		JOIN category_small cs ON p.category_small_id = cs.category_small_id
+		JOIN category_mid cm ON cm.category_mid_id = cs.category_mid_id
+        WHERE
+                     <foreach collection="searchWord" item="searchWord" separator=" AND ">
+            				product_display_name Like '%${searchWord}%'
+        				</foreach>
+        <if test="categorySmallId != null and categorySmallId.length > 0">
+            AND    cs.category_small_id = #{categorySmallId}
+        </if>
+	</select>
+	<!-- // 검색된 상품의 총 레코드 수
+	public int searchTotalRecords(@Param("searchWord") String searchWord, --> 
+		<select id="searchTotalRecords" resultType="int">
+			SELECT COUNT(*)
+		FROM productcontainer
+		
+                   WHERE
+                     <foreach collection="searchWord" item="searchWord" separator=" AND ">
+            				product_display_name Like '%${searchWord}%'
+        				</foreach>
+        			<![CDATA[
+                    AND afterprice >= #{minPrice}
+                    AND afterprice <= #{maxPrice}
+                    ]]>
+                        <if test="categorySmallId != null and categorySmallId.length > 0">
+                        AND   category_small_id = #{categorySmallId}
+                        </if>
+			<if test="brandId != null and brandId.length > 0">
+				AND brand_id IN
+				<foreach collection="brandId" item="brandId" open="("
+					close=")" separator=",">
+					#{brandId}
+				</foreach>
+			</if>
+		
+			
+		</select>
+	<!-- // 검색된 상품의 페이지 수
+	public int searchTotalPages(@Param("searchWord") String searchWord, --> 
+		<select id="searchTotalPages" resultType="int">
+		SELECT CEIL(COUNT(*) / #{perPage})
+		FROM productcontainer
+		WHERE
+                     <foreach collection="searchWord" item="searchWord" separator=" AND ">
+            				product_display_name Like '%${searchWord}%'
+        				</foreach>
+        			<![CDATA[
+                    AND afterprice >= #{minPrice}
+                    AND afterprice <= #{maxPrice}
+                    ]]>
+                        <if test="categorySmallId != null and categorySmallId.length > 0">
+                        AND   category_small_id = #{categorySmallId}
+                        </if>
+
+			<if test="brandId != null and brandId.length > 0">
+				AND brand_id IN
+				<foreach collection="brandId" item="brandId" open="("
+					close=")" separator=",">
+					#{brandId}
+				</foreach>
+			</if>
+		
+		</select>
+		
+		<select id="searchAjax" resultType="ProductContainer">
+		<![CDATA[
+		SELECT * FROM (
+                SELECT * FROM productcontainer where product_display_name Like '%${word}%'
+				) WHERE ROWNUM <= 5
+				]]>
+		</select>
+		
+		<select id="searchBrandAjax" resultType="BrandDTO">
+			select b.brand_id, brand_name, i.brand_logo_src 
+			from brand b 
+			left join brand_logo i 
+			on b.brand_id = i.brand_id 
+			where brand_name = #{word}
+		</select>
+		
+		 <select id="checkSearchWord" resultType="int">
+		 	select count(*) from searchword where searchword = #{searchWord}
+		 </select>
+		 
+		 <select id="searchWord" resultType="String">
+		 <![CDATA[
+		 	select * from(
+			select searchword from searchword order by search_cnt desc) WHERE ROWNUM <= 10
+			]]>
+		 </select>
+		 
+		 <insert id="insertSearchWord">
+		 	INSERT INTO searchword (search_id, searchword, search_cnt)
+			VALUES (searchword_seq.NEXTVAL, #{searchWord}, 1)
+		 </insert>
+		 
+		 <update id="updateSearchWord">
+		 	UPDATE searchword
+		 	SET search_cnt = search_cnt + 1
+		 	WHERE searchword = #{searchWord}
+		 </update>
+		 
+</mapper>

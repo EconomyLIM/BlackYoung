@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+
+<configuration>
+
+	<settings>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+		<setting name="logImpl" value="SLF4J" />
+		<setting name="logImpl" value="STDOUT_LOGGING" />
+	</settings>
+	
+	
+	<!-- 별칭 작성 부분 -->
+	<typeAliases>
+	<!-- 		<typeAlias type="com.blackolive.app.domain.head.CategoryTotalDTO" alias="categoryTotal" /> -->
+
+			<typeAlias type="com.blackolive.app.domain.head.CategoryLargeDTO" alias="categoryLarge" />
+			<typeAlias type="com.blackolive.app.domain.head.CategoryMidDTO" alias="categoryMid" />
+			<typeAlias type="com.blackolive.app.domain.head.CategorySmallDTO" alias="categorySmall" />
+			<typeAlias type="com.blackolive.app.domain.basket.BasketDTO" alias="basketDTO" />
+			<typeAlias type="com.blackolive.app.domain.brandPage.BrandPageDTO" alias="BrandPageDTO" />
+			
+			
+			<!-- productList -->
+			<typeAlias type="com.blackolive.app.domain.productList.BrandDTO" alias="BrandDTO" />
+			<typeAlias type="com.blackolive.app.domain.productList.ProductContainer" alias="ProductContainer" />
+			<typeAlias type="com.blackolive.app.domain.signin.OliveUserDTO" alias="OliveUserDTO" />
+			<typeAlias type="com.blackolive.app.domain.productList.CurrentCategoryInfoDTO" alias="CurrentCategoryInfoDTO" />
+			<typeAlias type="com.blackolive.app.domain.productList.CurrentCategoryNameDTO" alias="CurrentCategoryNameDTO" />
+			
+			<!-- productDetail -->
+			<typeAlias type="com.blackolive.app.domain.productdetail.ProductPromotionDTO" alias="ProductPromotionDTO" />
+			<typeAlias type="com.blackolive.app.domain.productdetail.ProductDetailIMGDTO" alias="ProductDetailIMGDTO" />
+			<typeAlias type="com.blackolive.app.domain.productdetail.ProductDetailExplainIMGDTO" alias="ProductDetailExplainIMGDTO" />
+			<typeAlias type="com.blackolive.app.domain.productdetail.ProductDetailBrandDTO" alias="ProductDetailBrandDTO" />
+			<typeAlias type="com.blackolive.app.domain.productdetail.ProductBuyinfoDTO" alias="ProductBuyinfoDTO" />
+			<typeAlias type="com.blackolive.app.domain.productdetail.QnAListDTO" alias="QnAListDTO" />
+			<typeAlias type="com.blackolive.app.domain.review.ReviewDTO" alias="ReviewDTO"/>
+			
+			<typeAlias type="com.blackolive.app.domain.productdetail.GiftDTO" alias="GiftDTO" />
+			
+			<typeAlias type="com.blackolive.app.domain.store.StoreDTO" alias="StoreDTO"/>
+			<typeAlias type="com.blackolive.app.domain.store.StoreDetailDTO" alias="StoreDetailDTO"/>
+			<typeAlias type="com.blackolive.app.domain.head.EventDTO" alias="EventDTO"/>
+			<typeAlias type="com.blackolive.app.domain.head.GiftCardDTO" alias="GiftCardDTO"/>
+			<typeAlias type="com.blackolive.app.domain.head.MsgCardDTO" alias="MsgCardDTO"/>
+			
+			<!-- review  -->
+			<typeAlias type="com.blackolive.app.domain.review.ReviewImgDTO" alias="ReviewImgDTO"/>
+			<typeAlias type="com.blackolive.app.domain.review.ReviewDetailDTO" alias="ReviewDetailDTO"/>
+			
+			<!-- exhibition -->
+			<typeAlias type="com.blackolive.app.domain.exhibition.ExhibitionBannerDTO" alias="ExhibitionBannerDTO"/>
+			<typeAlias type="com.blackolive.app.domain.exhibition.ExhibitionInfoDTO" alias="ExhibitionInfoDTO"/>
+			<typeAlias type="com.blackolive.app.domain.exhibition.ExhibitionImgDTO" alias="ExhibitionImgDTO"/>
+			<typeAlias type="com.blackolive.app.domain.exhibition.ExhibitionCategoryDTO" alias="ExhibitionCategoryDTO"/>
+			
+			<typeAlias type="com.blackolive.app.domain.productList.BrandTopDTO" alias="BrandTopDTO" />
+			
+			<!-- adminpage -->
+			<typeAlias type="com.blackolive.app.domain.adminpage.SalesPerMonthDTO" alias="SalesPerMonthDTO"/>
+			<typeAlias type="com.blackolive.app.domain.adminpage.SalesPerDayDTO" alias="SalesPerDayDTO"/>
+			<typeAlias type="com.blackolive.app.domain.adminpage.BuyInfoDTO" alias="BuyInfoDTO"/>
+			<typeAlias type="com.blackolive.app.domain.adminpage.OrderCheckDTO" alias="OrderCheckDTO"/>
+			
+			<!-- counselor -->
+			<typeAlias type="com.blackolive.app.domain.counselor.FaqVO" alias="FaqVO"/>
+			<typeAlias type="com.blackolive.app.domain.counselor.PersonalAskVO" alias="PersonalAskVO"/>
+			
+			<!-- order -->
+			<typeAlias type="com.blackolive.app.domain.order.DeliveryDTO" alias="DeliveryDTO"/>
+			<typeAlias type="com.blackolive.app.domain.order.CouponDTO" alias="CouponDTO"/>
+			<typeAlias type="com.blackolive.app.domain.order.OrderProductContainer" alias="OrderProductContainer"/>
+			<typeAlias type="com.blackolive.app.domain.order.PaymentDTO" alias="PaymentDTO"/>
+	</typeAliases>
+	
+	<!-- 언더바를 대문자를 바꿔주는 작업 -->
+	<mappers>
+		<!-- 
+		<mapper resource=""/> 의 작성 기준 -> src/main/resources는 기본적용
+		ex) com/blackolive/app/mapper/각자폴더/각자파일네임.xml
+		 -->
+		<mapper resource="com/blackolive/app/mapper/head/HeadMapper.xml"/>
+		
+		<mapper resource="com/blackolive/app/mapper/store/StoreMapper.xml"/>
+		<mapper resource="com/blackolive/app/mapper/basket/BasketMapper.xml"/>
+		<mapper resource="com/blackolive/app/mapper/brandPage/BrandPageMapper.xml"/>
+		
+		<mapper resource="com/blackolive/app/mapper/productList/ProductListMapper.xml"/>
+
+		<mapper resource="com/blackolive/app/mapper/signin/JoinMapper.xml"/>
+
+		<mapper resource="com/blackolive/app/mapper/usermodify/UsermodifyMapper.xml"/>
+
+		<mapper resource="com/blackolive/app/mapper/productdetail/ProductDetailMapper.xml"/>
+		<mapper resource="com/blackolive/app/mapper/productdetail/QnARestMapper.xml"/>
+		
+		<mapper resource="com/blackolive/app/mapper/review/ReviewMapper.xml"/>
+		<mapper resource="com/blackolive/app/mapper/exhibition/ExhibitionMapper.xml"/>
+		
+		<mapper resource="com/blackolive/app/mapper/adminpage/AdminPageIndexMapper.xml"/>
+		<mapper resource="com/blackolive/app/mapper/adminpage/OrderCheckMapper.xml"/>
+		<mapper resource="com/blackolive/app/mapper/adminpage/QnAMapper.xml"/>
+		
+		<mapper resource="com/blackolive/app/mapper/counselor/CounselorPersonalAskMapper.xml"/>
+		
+		<mapper resource="com/blackolive/app/mapper/search/SearchMapper.xml"/>
+
+		<mapper resource="com/blackolive/app/mapper/order/OrderMapper.xml"/>
+		
+		
+	</mappers>
+	
+</configuration>

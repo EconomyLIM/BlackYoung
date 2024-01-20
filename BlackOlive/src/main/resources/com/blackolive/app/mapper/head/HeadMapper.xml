@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.head.HeadMapper">
+	<!-- /* NOT_SQL_LOG */ -->
+	<!-- public Map<CategoryLargeDTO, List<CategoryMidDTO>> getHeadCategory (int categoryTotalId); -->
+	
+	<!-- <resultMap type="com.blackolive.app.domain.head.TotalListDTO" id="TotalResultMap">
+		<collection property="largeList" resultMap="LargeResultMap"></collection>
+	</resultMap> -->
+
+	<resultMap type="com.blackolive.app.domain.head.CategoryLargeDTO" id="LargeResultMap" >
+        <id property="categoryLargeId" column="category_large_id"/>
+        <result property="categoryLargeName" column="category_large_name"/>
+        <result property="categoryTotalId" column="category_total_Id"/>
+    </resultMap>
+
+    <resultMap type="com.blackolive.app.domain.head.CategoryMidDTO" id="MidResultMap">
+        <id property="categoryMidId" column="category_mid_id"/>
+        <result property="categoryMidName" column="category_mid_name"/>
+        <result property="categoryLargeId" column="category_large_id"/>
+    </resultMap>
+    
+    <resultMap type="com.blackolive.app.domain.review.ReviewDTO" id="reviewMap">
+       <id property="reviewId" column="review_id"/>
+		<result property="reviewId" column="review_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="productDisplayId" column="product_display_id"/>
+		<result property="reviewLike" column="review_like"/>
+		<result property="reviewContent" column="review_content"/>
+		<result property="reviewGrade" column="review_grade"/>
+		<result property="reviewRegdate" column="review_regdate"/>
+		<result property="reviewPoll1" column="review_poll_1"/>
+		<result property="reviewPoll2" column="review_poll_2"/>
+		<result property="reviewPoll3" column="review_poll_3"/>
+		<result property="productId" column="product_id"/>
+		<result property="nickname" column="nickname"/>
+		<result property="profileImg" column="profile_img"/>
+		<result property="skintoneName" column="skintone_name"/>
+		<result property="skintypeName" column="skintype_name"/>
+		<collection property="skinTrouble" resultMap="skinTroubleMap">
+		</collection>
+		<collection property="reviewimg" resultMap="reviewimgMap"></collection>
+	</resultMap>
+    
+    <resultMap type="com.blackolive.app.domain.review.ReviewDetailDTO" id="reviewDetailMap">
+       <id property="reviewId" column="review_id"/>
+		<result property="reviewId" column="review_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="productDisplayId" column="product_display_id"/>
+		<result property="reviewLike" column="review_like"/>
+		<result property="reviewContent" column="review_content"/>
+		<result property="reviewGrade" column="review_grade"/>
+		<result property="reviewRegdate" column="review_regdate"/>
+		<result property="reviewPoll1" column="review_poll_1"/>
+		<result property="reviewPoll2" column="review_poll_2"/>
+		<result property="reviewPoll3" column="review_poll_3"/>
+		<result property="productId" column="product_id"/>
+		<result property="nickname" column="nickname"/>
+		<result property="profileImg" column="profile_img"/>
+		<result property="skintoneName" column="skintone_name"/>
+		<result property="skintypeName" column="skintype_name"/>
+		<result property="gradeName" column="grade_name"/>
+		<result property="rnk" column="rnk"/>
+		<result property="reviewCnt" column="review_cnt"/>
+		<result property="likeCnt" column="like_cnt"/>
+		<result property="productName" column="product_name"/>
+		<result property="productPrice" column="product_price"/>
+		<result property="productImgSrc" column="product_img_src"/>
+		<result property="brandName" column="brand_name"/>
+		<collection property="skinTrouble" resultMap="skinTroubleMap">
+		</collection>
+		<collection property="reviewimg" resultMap="reviewimgMap"></collection>
+	</resultMap>
+	<resultMap type="com.blackolive.app.domain.review.SkintbDTO" id="skinTroubleMap">
+		<result property="userId2" column="user_id_2"/>
+		<result property="skintroubleName" column="skintrouble_name"/>
+	</resultMap>
+	<resultMap type="com.blackolive.app.domain.review.ReviewImgDTO" id="reviewimgMap">
+		<result property="reviewImgId" column="review_img_id"/>
+		<result property="reviewId" column="review_id"/>
+		<result property="reviewImgSrc" column="review_img_src"/>
+	</resultMap>
+
+    <select id="getHeadCategory" resultMap="LargeResultMap" resultType="java.util.List">
+        SELECT cl.category_large_id, cl.category_large_name, cl.category_total_id
+        FROM category_large cl
+        WHERE cl.category_total_id = #{categoryTotalId}
+        ORDER BY cl.category_large_id ASC
+    </select>
+
+    <select id="getHeadCategoryMid" resultMap="MidResultMap" resultType="java.util.List">
+        SELECT cm.category_mid_id, cm.category_mid_name, cm.category_large_id
+        FROM category_mid cm
+        JOIN category_large cl ON cm.category_large_id = cl.category_large_id
+        ORDER BY cm.category_mid_id ASC
+    </select>
+	
+	<select id="getExample" resultType="com.blackolive.app.domain.head.ExampleDTO">
+		SELECT *
+		FROM category_total
+		where category_total_id = 1
+	</select>
+	
+	<select id="selectAllEvent" resultType="EventDTO">
+		SELECT *
+		FROM event
+		WHERE event_category=#{click} AND event_enddate >= SYSDATE
+	</select>
+	
+	<select id="selectOneEvent" resultType="EventDTO">
+		SELECT *
+		FROM event
+		WHERE event_id = #{eventId}
+	</select>
+	
+	<select id="selectAllGiftCard" resultType="GiftCardDTO">
+		SELECT *
+		FROM giftcard
+	</select>
+	
+	<select id="selectOneGiftCard" resultType="GiftCardDTO">
+		SELECT *
+		FROM giftcard
+		WHERE giftcard_id = #{giftCardId}
+	</select>
+	
+	<select id="selectAllMsgCard" resultType="MsgCardDTO">
+		SELECT *
+		FROM msg_card
+	</select>
+
+	<select id="getTotalCategory" resultType="com.blackolive.app.domain.head.AllCategoryDTO">
+		SELECT DISTINCT
+                    ch.category_total_id
+					, cl.category_large_id, cl.category_large_name 
+					, cm.category_mid_id, cm.category_mid_name 
+					, cs.category_small_id, cs.category_small_name 
+					FROM product_display pd 
+					JOIN product p ON pd.product_display_id = p.product_display_id
+					JOIN category_small cs ON p.category_small_id = cs.category_small_id 
+					JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id 
+					JOIN category_large cl ON cm.category_large_id = cl.category_large_id
+					JOIN category_total ch ON cl.category_total_id = ch.category_total_id 
+					where pd.product_display_id = #{product_display_id}
+	</select>
+	
+	<select id="selectRankingCatLargeName" resultType="categoryLarge">
+		SELECT cl.category_large_id, category_large_name
+		FROM category_large cl 
+		<if test="type == '판매 랭킹'">
+			JOIN category_mid cm ON cl.category_large_id = cm.category_large_id
+			JOIN order_product o ON cm.category_mid_id = o.category_mid_id
+			GROUP BY cl.category_large_id, category_large_name
+			HAVING sum(product_cnt) > 50
+		</if>
+		ORDER BY category_large_id
+	</select>
+	
+	<select id="selectSaleRankingProduct" resultType="ProductContainer">
+		SELECT * 
+		FROM productcontainer 
+		WHERE  product_id IN ( 
+		    SELECT product_id 
+		    FROM ( 
+		        SELECT product_id, sum(product_cnt) cnt 
+		        FROM order_product o
+		        JOIN category_mid c ON o.category_mid_id = c.category_mid_id 
+		        <where>
+			        <if test="categoryLargeId != null and categoryLargeId != ''">
+						category_large_id = #{categoryLargeId}
+					</if>
+		        </where>
+		        GROUP BY product_id 
+		        ORDER BY cnt DESC 
+		    )
+		    <![CDATA[
+		    WHERE ROWNUM <= 100
+		    ]]>
+		)
+		ORDER BY ordercnt DESC
+	</select>
+	
+	<!-- 리뷰 이미지도 함께 가져올 때 첫번 째 이미지만 가져온다. 만약 리뷰 이미지가 없다면 주문한 상품 이미지로 대체한다. -->
+	<select id="selectReviceBest" resultMap="reviewMap">
+		SELECT r.review_id, review_content, review_like, NVL(review_img_src, pi.product_img_src) review_img_src
+		FROM review r JOIN product p ON r.product_id = p.product_id
+			JOIN category_small cs ON p.category_small_id = cs.category_small_id
+			JOIN category_mid cm ON cs.category_mid_id = cm.category_mid_id
+		    JOIN product_img pi ON r.product_id = pi.product_id
+		    LEFT JOIN (
+		        SELECT review_id, review_img_src
+		        FROM ( 
+		            SELECT review_id, review_img_src, ROW_NUMBER() OVER (PARTITION BY review_id ORDER BY review_id) AS rnk
+		            FROM review_img
+		        )
+		        WHERE rnk = 1
+		    ) img ON r.review_id = img.review_id
+		WHERE category_large_id = #{categoryLargeId}
+		ORDER BY review_like DESC
+	</select>
+
+	<!-- JOIN product p ON r.product_id = p.product_id -->
+	<select id="selectOneReview" resultMap="reviewDetailMap">
+		SELECT r.review_id, product_display_id, review_like, review_content, review_grade
+		    , review_regdate, review_poll_1, review_poll_2, review_poll_3, product_id
+		    , review_img_src, product_name, product_price, product_img_src, product_display_name
+		    , brand_name, NVL(nickname, SUBSTR(user_id, 1, LENGTH(user_id) - 4)||'****') nickname, profile_content, profile_img
+		    , skintone_name, skintype_name, skintrouble_name, grade_name, rnk, review_cnt, like_cnt
+		FROM review r
+		    LEFT JOIN review_img ri ON r.review_id = ri.review_id
+		    JOIN product p ON r.product_id = p.product_id
+		    JOIN product_img pi ON p.product_id = pi.product_id
+		    JOIN product_display pd ON p.product_display_id = pd.product_display_id
+		    JOIN brand b ON pd.brand_id = b.brand_id
+		    LEFT JOIN userprofile up ON r.user_id = up.user_id 
+		    LEFT JOIN profile_skintone ps ON up.skintone_id = ps.skintone_id
+		    LEFT JOIN profile_skintype pf ON up.skintype_id = pf.skintype_id
+		    LEFT JOIN userprofile_skintrouble us ON us.user_id = r.user_id
+		    LEFT JOIN profile_skintrouble pt ON us.skintrouble_id = pt.skintrouble_id
+		    JOIN olive_user ou ON r.user_id = ou.user_id
+		    JOIN olive_members om ON ou.grade_id = om.grade_id
+		    JOIN (
+		        SELECT ROWNUM rnk, tmp.*
+		        FROM (
+		            SELECT user_id, count(*) review_cnt, sum(review_like) like_cnt
+		            FROM review
+		            GROUP BY user_id
+		            ORDER BY like_cnt DESC
+		        ) tmp
+		        WHERE user_id = tmp.user_id
+		    ) info ON r.user_id = info.user_id  
+		WHERE r.review_id = #{reviewId}
+	</select>
+	
+	<update id="updateReviewLike">
+		UPDATE review
+		SET review_like = review_like + #{likePlus}
+		WHERE review_id = #{reviewId}
+	</update>
+	
+	<!-- 리뷰 아이디 컬럼명 수정하기 -->
+	<insert id="insertReviewReport">
+		INSERT INTO review_report(review_report_id, revew_id, user_id, review_report_content, review_report_type)
+		VALUES('rr'||TO_CHAR(review_report_seq.NEXTVAL, 'FM00000000'), #{reviewId}, #{userId}, #{reviewReportContent}, #{reviewReportType})
+	</insert>
+</mapper>

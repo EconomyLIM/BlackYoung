@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.productdetail.QnARestMapper">
+
+	<!-- // QnA등록 작업 insertQnA
+	public int insertQnA(@Param("qnaWriteDTO") QnAWriteDTO qnaWriteDTO); -->
+	<insert id="insertQnA">
+		INSERT INTO qna VALUES ('qna_'|| qna_seq.nextval,#{qnaWriteDTO.productDisplayId} , #{qnaWriteDTO.userId} , #{qnaWriteDTO.qnaQuestion} , null, sysdate, '답변대기')
+	</insert>
+	
+	<!-- // Qna 수정하기 위해 QnaDTO를 갖고오는 작업
+	public QnAListDTO getQnA(@Param("qnaId")String qnaId); -->
+	<select id="getQnA" resultType="QnAListDTO">
+		SELECT QNA_ID, PRODUCT_DISPLAY_ID, USER_ID , QNA_QUESTION
+		, QNA_ANSWER , TO_CHAR(QNA_DATE, 'yyyy.mm.dd') as QNA_DATE , QNA_STATUS
+		FROM qna 
+		WHERE qna_Id = #{qnaId}
+	</select>
+	
+	<!-- // qna 수정하는 작업
+	public int modifyQnA(@Param("qnaId") String qnaId, @Param("qnaQuestion")String qnaQuestion); -->
+	
+	<update id="modifyQnA">
+		UPDATE qna 
+		SET qna_question = #{qnaQuestion}
+		WHERE qna_id = #{qnaId}
+	</update>
+	
+	<!-- // qna 삭제하는 작업 
+	public int deleteQnA(@Param("qnaId") String qnaId); -->
+	
+	<delete id="deleteQnA">
+		DELETE FROM qna
+		WHERE qna_Id = #{qnaId}
+	</delete>
+	
+
+</mapper>

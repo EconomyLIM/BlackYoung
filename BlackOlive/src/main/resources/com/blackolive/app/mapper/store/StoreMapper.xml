@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.store.StoreMapper">
+	
+	<resultMap type="com.blackolive.app.domain.store.StoreDTO" id="storeMap">
+		<constructor>
+			<idArg column="store_id" javaType="string"/>
+			<arg column="weekday"  javaType="string"/>
+			<arg column="saturday"  javaType="string"/>
+			<arg column="sunday"  javaType="string"/>
+		</constructor>
+		
+		<result property="districtId" column="district_id"/>
+		<result property="storeName" column="store_name"/>
+		<result property="storeTel" column="store_tel"/>
+		<result property="storeAddress" column="store_address"/>
+		<result property="storeDirection" column="store_direction"/>
+		<result property="storeParking" column="store_parking"/>
+		<result property="storeSignificant" column="store_significant"/>
+		<result property="storeFavorite" column="store_favorite"/>
+		<result property="lat" column="lat"/>
+		<result property="lng" column="lng"/>
+		<result property="holiday" column="holiday"/>
+		<result property="favYN" column="favYN"/>
+		<result property="stockCnt" column="stock_cnt"/>
+	</resultMap>
+	
+	<resultMap type="com.blackolive.app.domain.store.StoreDetailDTO" id="storeDetailMap">
+		
+		<constructor>
+			<idArg column="store_id" javaType="string"/>
+			<arg column="weekday"  javaType="string"/>
+			<arg column="saturday"  javaType="string"/>
+			<arg column="sunday"  javaType="string"/>
+		</constructor>
+		
+		<result property="districtId" column="district_id"/>
+		<result property="storeName" column="store_name"/>
+		<result property="storeTel" column="store_tel"/>
+		<result property="storeAddress" column="store_address"/>
+		<result property="storeDirection" column="store_direction"/>
+		<result property="storeParking" column="store_parking"/>
+		<result property="storeSignificant" column="store_significant"/>
+		<result property="storeFavorite" column="store_favorite"/>
+		<result property="lat" column="lat"/>
+		<result property="lng" column="lng"/>
+		<result property="holiday" column="holiday"/>
+		<result property="favYN" column="favYN"/>
+		
+		<collection property="storeThumbnail" resultMap="storeThumbnailMap"/>
+		<collection property="storeCategory" resultMap="storeCategoryMap"/>
+		<collection property="oliveService" resultMap="oliveServiceMap"/>
+	</resultMap>
+	
+	<resultMap type="com.blackolive.app.domain.store.StoreThumbnailDTO" id="storeThumbnailMap">
+		<result property="thumbnailId" column="thumbnail_id"/>
+		<result property="storeId" column="store_id"/>
+		<result property="thumbnailSrc" column="thumbnail_src"/>
+	</resultMap>
+	
+	<resultMap type="com.blackolive.app.domain.store.StoreCategoryDTO" id="storeCategoryMap">
+		<result property="categoryId" column="category_id"/>
+		<result property="categoryName" column="category_name"/>
+	</resultMap>
+	
+	<resultMap type="com.blackolive.app.domain.store.OliveServiceDTO" id="oliveServiceMap">
+		<result property="oliveServiceId" column="olive_service_id"/>
+		<result property="serviceName" column="service_name"/>
+		<result property="serviceContent" column="service_content"/>
+		<result property="serviceType" column="service_type"/>
+	</resultMap>
+	
+
+	<select id="selectAllCity" resultType="com.blackolive.app.domain.store.CityDTO">
+		SELECT *
+		FROM city
+	</select>
+	
+	<select id="selectAllDistrict" resultType="com.blackolive.app.domain.store.DistrictDTO">
+		SELECT *
+		FROM district
+		WHERE city_id = #{cityId}
+	</select>
+
+	<select id="selectAllStore" resultMap="storeMap">
+		SELECT s.*, st.*
+		<if test="userId != null and userId != ''">
+			, (SELECT 'Y'
+	        	FROM interest_shop
+	        	WHERE store_id = s.store_id AND user_id = #{userId}) favYN
+		</if>
+		FROM store s JOIN store_time st ON s.store_id = st.store_id
+	</select>
+	
+	<select id="selectAllStoreStock" resultMap="storeMap">
+		SELECT s.*, st.*
+		<if test="userId != null and userId != ''">
+			, (SELECT 'Y'
+	        	FROM interest_shop
+	        	WHERE store_id = s.store_id AND user_id = #{userId}) favYN
+		</if>
+			, NVL(( 
+		        SELECT amount
+		        FROM store_stock
+		        WHERE product_id = #{productId} AND store_id = s.store_id
+		    ), -1) stock_cnt
+		FROM store s JOIN store_time st ON s.store_id = st.store_id
+		<trim prefix="AND (" prefixOverrides="OR" suffix=")">
+			<if test="tcs != null and tcs.length != 0">
+				OR s.store_id IN ( 
+					SELECT DISTINCT(store_id)
+				    FROM handling_store
+				    WHERE category_id IN 
+					<foreach item="tcs" collection="tcs" open="(" close=")" separator=",">
+				        #{tcs}
+				    </foreach>
+				)
+			</if>
+			<if test="pss != null and pss.length != 0">
+				OR s.store_id IN (
+					SELECT DISTINCT(store_id)
+				    FROM store_service
+				    WHERE olive_service_id IN 
+					<foreach item="pss" collection="pss" open="(" close=")" separator=",">
+				    	#{pss}
+				    </foreach>
+				)
+			</if>
+		</trim>
+	</select>
+	
+	<select id="selectStoreList" resultMap="storeMap">
+		SELECT s.*, st.*
+		<if test="userId != null and userId != ''">
+			, (SELECT 'Y'
+	        	FROM interest_shop
+	        	WHERE store_id = s.store_id AND user_id = #{userId}) favYN
+		</if>
+		FROM store s JOIN store_time st ON s.store_id = st.store_id
+		<trim prefix="where" prefixOverrides="AND | OR">
+			<if test="city != '' or district != ''">
+				AND store_address LIKE '%' || #{city} || ' ' || #{district} || '%'
+			</if>
+			<trim prefix="AND (" prefixOverrides="OR" suffix=")">
+				<if test="tcs != null and tcs.length > 0">
+					OR s.store_id IN ( 
+				        SELECT DISTINCT(store_id)
+				        FROM handling_store
+				        WHERE category_id IN 
+				        <foreach item="tcs" collection="tcs" open="(" close=")" separator=",">
+				        	#{tcs}
+				        </foreach>
+					)
+				</if>
+				<if test="pss != null and pss.length > 0">
+					OR s.store_id IN (
+				        SELECT DISTINCT(store_id)
+				        FROM store_service
+				        WHERE olive_service_id IN 
+						<foreach item="pss" collection="pss" open="(" close=")" separator=",">
+				        	#{pss}
+				        </foreach>
+					)
+				</if>
+			</trim>
+		</trim>
+	</select>
+	
+	<update id="updateStoreFavorite">
+		UPDATE store
+		SET store_favorite = store_favorite + #{clickCheck}
+		WHERE store_id = #{storeId}
+	</update>
+	
+	<insert id="insertInterestShop">
+		INSERT INTO interest_shop
+		VALUES('AS_'||TO_CHAR(seq_inter_shop.NEXTVAL, 'FM00000000'), #{param1}, #{param2})
+	</insert>
+	
+	<delete id="deleteInterestShop">
+		DELETE FROM interest_shop
+		WHERE user_id=#{param1} AND store_id=#{param2}
+	</delete>
+	
+	<select id="selectInterestShop" resultType="StoreDTO">
+		SELECT *
+		FROM store s JOIN store_time st ON s.store_id = st.store_id
+		JOIN interest_shop i ON s.store_id = i.store_id
+		WHERE user_id = #{userId}
+		<trim prefix="AND (" prefixOverrides="OR" suffix=")">
+			<if test="tcs != null and tcs.length != 0">
+				OR s.store_id IN ( 
+					SELECT DISTINCT(store_id)
+				    FROM handling_store
+				    WHERE category_id IN 
+					<foreach item="tcs" collection="tcs" open="(" close=")" separator=",">
+				        #{tcs}
+				    </foreach>
+				)
+			</if>
+			<if test="pss != null and pss.length != 0">
+				OR s.store_id IN (
+					SELECT DISTINCT(store_id)
+				    FROM store_service
+				    WHERE olive_service_id IN 
+					<foreach item="pss" collection="pss" open="(" close=")" separator=",">
+				    	#{pss}
+				    </foreach>
+				)
+			</if>
+		</trim>
+		
+	</select>
+	
+	<!-- 
+	SELECT *
+	FROM store s JOIN store_time st ON s.store_id = st.store_id
+	WHERE (s.store_id IN ( 
+	        SELECT DISTINCT(store_id)
+	        FROM handling_store
+	        WHERE category_id IN (1, 2)
+	    ) OR s.store_id IN (
+	        SELECT DISTINCT(store_id)
+	        FROM store_service
+	        WHERE olive_service_id IN (1, 2)
+	    ))
+	    AND store_address LIKE '%가평%' OR store_name LIKE '%가평%' 
+	    -->
+
+	<select id="selectStoreKeyword" resultMap="storeMap">
+		SELECT s.*, st.*
+		<if test="userId != null and userId != ''">
+			, (SELECT 'Y'
+	        	FROM interest_shop
+	        	WHERE store_id = s.store_id AND user_id = #{userId}) favYN
+		</if>
+		
+		FROM store s JOIN store_time st ON s.store_id = st.store_id
+		<trim prefix="where" prefixOverrides="AND | OR">
+			<if test="keyword != ''">
+				AND (store_address LIKE '%' || #{keyword}  ||'%' OR store_name LIKE '%' || #{keyword} || '%')
+			</if>
+			<trim prefix="AND (" prefixOverrides="OR" suffix=")">
+				<if test="tcs != null and tcs.length != 0">
+					OR s.store_id IN ( 
+				        SELECT DISTINCT(store_id)
+				        FROM handling_store
+				        WHERE category_id IN 
+						<foreach item="tcs" collection="tcs" open="(" close=")" separator=",">
+					    	#{tcs}
+					    </foreach>
+					)
+				</if>
+				<if test="pss != null and pss.length != 0">
+					OR s.store_id IN (
+				        SELECT DISTINCT(store_id)
+				        FROM store_service
+				        WHERE olive_service_id IN
+						<foreach item="pss" collection="pss" open="(" close=")" separator=",">
+				        	#{pss}
+				        </foreach>
+					)
+				</if>
+			</trim>
+		</trim>
+	</select>
+	
+	<select id="selectProductName" resultType="ProductContainer">
+		SELECT *
+		FROM productcontainer
+		WHERE product_display_name LIKE '%' || #{keyword} || '%'
+		ORDER BY LENGTH(product_display_name)
+	</select>
+
+	<select id="selectOneStoreDetail" resultMap="storeDetailMap">
+		SELECT *
+		FROM store s 
+		    JOIN store_time st ON s.store_id = st.store_id
+		    JOIN store_thumbnail sth ON s.store_id = sth.store_id
+		    JOIN handling_store hs ON s.store_id = hs.store_id
+		    JOIN store_category sc ON hs.category_id = sc.category_id 
+		    JOIN store_service ss ON s.store_id = ss.store_id
+		    JOIN olive_service os ON ss.olive_service_id = os.olive_service_id
+		WHERE s.store_id = #{storeId}
+	</select>
+
+	<select id="selectStoreBestProduct" resultType="ProductContainer">
+		SELECT *
+		FROM productcontainer
+		WHERE product_id IN (
+		    SELECT product_id
+		    FROM (
+		        SELECT product_id, SUM(product_cnt) product_cnt
+		        FROM order_product op 
+		            JOIN olive_order oo ON op.order_id = oo.order_id
+		            JOIN olive_user ou ON oo.user_id = ou.user_id
+		            JOIN category_mid cm ON op.category_mid_id = cm.category_mid_id 
+		            <trim prefix="where" prefixOverrides="AND">
+		            	<if test="userGender != 0">
+		            		AND user_gender = #{userGender} 
+		            	</if>
+		            	<if test="categoryLargeId != ''">
+		            		AND category_large_id = #{categoryLargeId}
+		            	</if>
+		            	<if test="userAge != 0">
+		            		AND FLOOR((TO_CHAR(SYSDATE, 'yyyy') - TO_CHAR(user_birth, 'yyyy') +
+				                CASE SIGN(TO_CHAR(SYSDATE, 'mmdd') - TO_CHAR(user_birth, 'mmdd')) 
+				                WHEN 1 THEN -1
+				                ELSE 1
+				                END)/10) = #{userAge}
+		            	</if>
+		            </trim>
+		        GROUP BY product_id
+		        ORDER BY product_cnt DESC
+		    ) t
+		    <![CDATA[
+		    WHERE ROWNUM <= 10 AND product_cnt >= 3
+		    ]]>
+		)
+	</select>
+
+</mapper>

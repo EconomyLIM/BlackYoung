@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.blackolive.app.mapper.productdetail.ProductDetailMapper">
+
+	<select id="getProduct" resultType="com.blackolive.app.domain.productdetail.ProductDetailDTO">
+		select * from PRODUCTCONTAINER2 where product_display_id = #{productDisplayId}
+	</select>
+	
+	<!-- // 해당 상품의 프로모션 갖고오기
+	public ProductPromotionDTO getProductPromotion(@Param("productDisplayId") String productDisplayId); -->
+	<select id="getProductPromotion" resultType="ProductPromotionDTO">
+		<![CDATA[
+		SELECT prpr.promotion_discount_id, to_char(prd.promotion_discount_start_day,'yyyy.mm.dd')AS promotion_discount_start_day, to_char(prd.promotion_discount_end_day,'yyyy.mm.dd')AS promotion_discount_end_day, prd.promotion_discount_price
+			, prpr.promotion_coupon_id, prc.promotion_coupon_name, to_char(prc.promotion_coupon_start_day,'yyyy.mm.dd')AS promotion_coupon_start_day, to_char(prc.promotion_coupon_end_day,'yyyy.mm.dd') AS promotion_coupon_end_day
+			, NVL(CASE  
+			WHEN prc.promotion_coupon_kind = 1 THEN prc.promotion_coupon_discount
+			WHEN prc.promotion_coupon_kind = 2 THEN p.product_price * prc.promotion_coupon_discount 
+ 			ELSE p.product_price 
+			END , 0) promotionCouponDiscount
+			FROM product_display pd 
+			JOIN product p ON pd.product_display_id = p.product_display_id 
+			LEFT JOIN product_promotion prpr ON pd.product_display_id = prpr.product_display_id 
+			LEFT JOIN promotion_coupon prc ON prpr.promotion_coupon_id = prc.promotion_coupon_id and prc.promotion_coupon_start_day <= SYSDATE AND prc.promotion_coupon_end_day >= SYSDATE
+			LEFT JOIN promotion_discount prd ON prpr.promotion_discount_id = prd.promotion_discount_id and prd.promotion_discount_start_day <= SYSDATE AND prd.promotion_discount_end_day >= SYSDATE 
+			WHERE pd.product_display_id = #{productDisplayId}
+			ORDER BY p.product_price asc
+			]]>  
+	</select>
+	
+	<!-- // 해당 상품의 표시 이미지 갖고오기 getProductDisplayImg
+	public ProductDetailIMGDTO getProductDisplayImg(@Param("productDisplayId") String productDisplayId); -->
+	<select id="getProductDisplayImg" resultType="ProductDetailIMGDTO">
+		SELECT product_display_img, product_display_id, product_display_src FROM product_display_img
+		WHERE product_display_id = #{productDisplayId}
+	</select>
+	
+	<!-- // 해당 상품의 설명 이미지 갖고오기 getProductDisplayExplainImg
+	public List<ProductDetailExplainIMGDTO> getProductDisplayExplainImg (@Param("productDisplayId") String productDisplayId); -->
+	<select id="getProductDisplayExplainImg" resultType="ProductDetailExplainIMGDTO">
+		SELECT PRODUCT_EXPLAINATION_IMG_ID, PRODUCT_EXPLAINATION_IMG_SRC FROM product_explaination_img
+		WHERE PRODUCT_DISPLAY_ID = #{productDisplayId}
+		ORDER BY PRODUCT_EXPLAINATION_IMG_ID 
+	
+	</select>
+	
+<!-- 	// 해당 상품의 브랜드 정보 갖고오기 getProductBrandInfo
+	public ProductDetailBrandDTO getProductBrandInfo(@Param("productDisplayId") String productDisplayId); -->
+	<select id="getProductBrandInfo" resultType="ProductDetailBrandDTO">
+		SELECT b.brand_id, b.brand_name, bl.brand_logo_src 
+				FROM product_display pd 
+				JOIN brand b ON pd.brand_id = b.brand_id 
+				LEFT JOIN brand_logo bl ON b.brand_id = bl.brand_id 
+				WHERE pd.PRODUCT_DISPLAY_ID = #{productDisplayId}
+	</select>
+	
+	<!-- // 해당 상품의 구매정보 갖고오기
+	public List<ProductBuyinfoDTO> getProductBuyInfo (@Param("productDisplayId") String productDisplayId); -->
+	
+	<select id="getProductBuyInfo" resultType="ProductBuyinfoDTO">
+		SELECT bt.buyinfo_title, bc.buyinfo_content FROM buyinfo_content bc
+		JOIN buyinfo_title bt ON bc.buyinfo_title_id = bt.buyinfo_title_id
+		WHERE product_display_id = #{productDisplayId}
+	</select>
+	
+<!-- 	// 해당 상품의 QnA 갖고오기
+	public List<QnAListDTO> getProductQna (@Param("productDisplayId") String productDisplayId, @Param("start") int start, @Param("end") int end);; -->
+	<select id="getProductQna" resultType="QnAListDTO">
+		SELECT *         
+   		 	FROM (             
+        			SELECT ROWNUM no, t.*            
+        			FROM 
+            			(
+                			SELECT qna_id, user_id, qna_question, qna_answer, TO_CHAR(QNA_DATE, 'yyyy.mm.dd') as QNA_DATE, qna_status
+                			FROM qna 
+                			WHERE product_display_id = #{productDisplayId}
+                			ORDER BY qna_date desc
+            			) t
+        		) b
+		WHERE b.no BETWEEN #{start} AND #{end}
+	</select>
+	
+	<!-- // QnA 총 레코드수 갖고오기
+	public int getQnaTotalRecords(@Param("productDisplayId") String productDisplayId); -->
+	<select id="getQnaTotalRecords" resultType="int">
+		SELECT count(*) FROM qna
+		WHERE product_display_id = #{productDisplayId}
+	</select>
+	
+	<!-- // QnA 총 페이지수 갖고오기
+	public int getQnATotalPages(@Param("productDisplayId") String productDisplayId); -->
+	
+	<select id="getQnATotalPages" resultType="int">
+		SELECT CEIL( COUNT(*) / 10 ) FROM qna
+		WHERE product_display_id = #{productDisplayId}
+	</select>
+	
+	
+	<!-- // productView 기록 
+	public void insertProductView(@Param("largeId")String largeId, @Param("productDisplayId") String productDisplayId); -->
+	<insert id="insertProductView">
+	INSERT INTO product_view  
+	VALUES (#{largeId}, #{productDisplayId}, SYSDATE)
+	</insert>
+	
+	<!--  증정품 가져오기
+	GiftDTO getGift(@Param("productDisplayId")String productDisplayId); -->
+	
+	<select id="getGift" resultType="GiftDTO">
+		select * from gift g join gift_display gd on g.gift_id = gd.gift_id 
+		join product_display pd on gd.product_display_id = pd.product_display_id 
+        join brand b on pd.brand_id = b.brand_id
+        where gd.product_display_id = #{productDisplayId}
+	</select>
+	<!-- 쿠키용 -->
+	<!-- ProductContainer cookie(@Param("productDisplayId")String productDisplayId); -->
+	<select id="cookie" resultType="ProductContainer">
+		select * from productcontainer where product_display_id= #{productDisplayId}
+	</select>
+	
+	<!-- 상품 하나 가져오기
+	public ProductDetailDTO selectOneProduct(@Param("productDisplayId")String productDisplayId); -->
+	<select id="selectOneProduct" resultType="com.blackolive.app.domain.productdetail.ProductDetailDTO">
+		select * from PRODUCTCONTAINER2 where product_display_id = #{productDisplayId}
+	</select>
+</mapper>

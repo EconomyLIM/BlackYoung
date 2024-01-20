@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.blackolive.app.mapper.productList.ProductListMapper">
+
+	<!-- // 중분류 카테고리를 선택할 시 상위 카테고리 갖고오기 public List<CategoryLargeDTO> getCategoryLarge 
+		(String midId); -->
+
+	<select id="getCategoryLarge" resultType="categoryLarge">
+		SELECT * FROM category_large
+		<where>
+			<if test=" midId &lt;= 58 ">
+				category_large_id &lt;= 12
+			</if>
+			<if test=" 58 &lt;midId and midId &lt;= 78">
+				12 &lt; category_large_id and category_large_id &lt;= 16
+			</if>
+			<if test=" 78 &lt; midId ">
+				17 &lt; category_large_id
+			</if>
+		</where>
+	</select>
+
+	<!-- // 중분류 카테고리 선택할 시 하위 분류 카테고리 갖고오기 public List<CategorySmallDTO> getCategorySmall(String 
+		midId); -->
+	<select id="getCategorySmall" resultType="categorySmall">
+		SELECT * FROM
+		category_small
+		WHERE category_mid_id = #{midId}
+	</select>
+
+	<!-- // 소분류 카테고리를 선택할 시 중위 카테고리 갖고오기 public List<CategoryMidDTO> getCategoryMid(String 
+		smallId); -->
+	<select id="getCategoryMid" resultType="categoryMid">
+		SELECT * FROM
+		category_mid
+		WHERE category_large_id = #{largeId}
+	</select>
+
+	<!-- // 총 레코드 수 갖고오는 작업 public int getTotalRecords(int group, String id, 
+		String brandId[]); -->
+	<select id="getTotalRecords" resultType="int">
+		SELECT COUNT(*)
+		FROM productcontainer
+		<where>
+			<choose>
+				<when test="group == 1">
+					category_large_id = #{id}
+				</when>
+				<when test="group == 2">
+					category_mid_id = #{id}
+				</when>
+				<when test="group == 3">
+					category_small_id = #{id}
+				</when>
+			</choose>
+
+			<if test="brandId != null and brandId.length > 0">
+				AND brand_id IN
+				<foreach collection="brandId" item="brandId" open="("
+					close=")" separator=",">
+					#{brandId}
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<select id="getTotalPages" resultType="int">
+		SELECT CEIL(COUNT(*) / #{perPage})
+		FROM productcontainer
+		<where>
+			<choose>
+				<when test="group == 1">
+					category_large_id = #{id}
+				</when>
+				<when test="group == 2">
+					category_mid_id = #{id}
+				</when>
+				<when test="group == 3">
+					category_small_id = #{id}
+				</when>
+			</choose>
+
+			<if test="brandId != null and brandId.length > 0">
+				AND brand_id IN
+				<foreach collection="brandId" item="brandId" open="("
+					close=")" separator=",">
+					#{brandId}
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<!-- // 선택한 카테고리를 팔고 있는 브랜드를 갖고오는 작업 public List<BrandDTO> getBrandList(String 
+		id); -->
+	<select id="getBrandList" resultType="BrandDTO">
+		SELECT DISTINCT b.brand_id, b.brand_name
+		FROM brand b
+		JOIN product_display pd ON b.brand_id = pd.brand_id
+		JOIN product p ON pd.product_display_id = p.product_display_id
+		JOIN category_small cs ON p.category_small_id = cs.category_small_id
+		JOIN category_mid cm ON cm.category_mid_id = cs.category_mid_id
+		<where>
+			<choose>
+				<when test="group == 2">
+					cm.category_mid_id = #{id}
+				</when>
+				<when test="group == 3">
+					cs.category_small_id = #{id}
+				</when>
+			</choose>
+		</where>
+		ORDER BY b.brand_name ASC
+	</select>
+	
+	<!-- // 선택한 카테고리의 상품 리스트 갖고오는 작업 + 선택브랜드만 갖고오는 작업 예정
+	public List<ProductContainer> getProductList( -->
+	<select id="getProductList" resultType="ProductContainer">
+        SELECT *
+        FROM (
+            SELECT ROWNUM no, t.*
+            FROM (
+                SELECT productcontainer.*
+                ,CASE 
+        		WHEN pl.PRODUCT_DISPLAY_ID IS NOT NULL THEN 1
+        		ELSE 0
+    			END AS productLikeState
+               	 FROM productcontainer 
+					LEFT JOIN product_like pl ON productcontainer.PRODUCT_DISPLAY_ID = pl.PRODUCT_DISPLAY_ID 
+					 <if test="userId != null">
+						 AND pl.user_id = #{userId}
+                    </if>
+                <where>
+                    <choose>
+                        <when test="group == 1">
+                           category_large_id = #{id}
+                        </when>
+                        <when test="group == 2">
+                           category_mid_id = #{id}
+                        </when>
+                        <when test="group == 3">
+                           category_small_id = #{id}
+                        </when>
+                    </choose>
+
+                    <if test="brandId != null and brandId.length > 0">
+                        AND brand_id IN
+                        <foreach collection="brandId" item="brandId" open="(" close=")" separator=",">
+                            #{brandId}
+                        </foreach>
+                    </if>
+                   
+                </where>
+
+                <choose>
+                    <when test='sort == "1"'>
+                        ORDER BY product_display_like DESC
+                    </when>
+                    <when test='sort == "2"'>
+                        ORDER BY product_display_regdate DESC
+                    </when>
+                    <when test='sort == "3"'>
+                        ORDER BY ordercnt DESC
+                    </when>
+                    <when test='sort == "4"'>
+                        ORDER BY afterprice ASC
+                    </when>
+                    <when test='sort == "5"'>
+                        ORDER BY (minprice - afterprice) / minprice * 100 DESC
+                    </when>
+                </choose>
+            ) t
+        ) b
+        WHERE b.no BETWEEN #{begin} AND #{end}
+    </select>
+    
+<!--     	// 선택한 카테고리 이름과 현재 id 갖고오는 작업
+	public CurrentCategoryInfoDTO getCurrentCategoryInfo (@Param("midId") String midId); -->
+	
+	<select id="getCurrentCategoryInfo" resultType="CurrentCategoryInfoDTO">
+	SELECT category_mid_id, category_mid_name, cl.category_large_id, cl.category_large_name 
+				 FROM category_mid cm 
+				JOIN category_large cl ON cm.category_large_id = cl.category_large_id 
+				WHERE category_mid_id = #{midId}
+	
+	</select>
+	
+	<!-- // 현재 선택한 카테고리 이름을 갖고오는 작업
+	public CurrentCategoryName getCurrentCategoryName (@Param("group") int group, @Param("id")String id); -->
+	
+	<select id="getCurrentCategoryName" resultType="CurrentCategoryNameDTO">
+		<choose>
+			<when test="group == 1">
+				SELECT category_large_name as name FROM category_large WHERE category_large_id = #{id}
+			</when>
+			
+			<when test="group == 2">
+				SELECT category_mid_name as name FROM category_mid WHERE category_mid_id = #{id}
+			</when>
+			
+			<when test="group ==3">
+				SELECT category_small_name as name FROM category_small WHERE category_small_id = #{id}
+			</when>
+		</choose>
+	</select>
+	
+	<!-- // 좋아요 버튼을 누르면 데이터에 추가하는 작업
+	public boolean addProductLike( @Param("userId") String userId,  @Param("productDisplayId")String productDisplayId) throws Exception; -->
+	<insert id="addProductLike" parameterType="java.util.Map">
+        INSERT INTO product_like
+        VALUES ( 'prl_' || product_like_seq.NEXTVAL, #{userId}, #{productDisplayId} )
+    </insert>
+
+	<!-- // 좋아요 버튼을 한번 더 누르면 데이터에 삭제하는 작업
+	public boolean removeProductLike( @Param("userId") String userId, @Param("productDisplayId")String productDisplayId) throws Exception; -->
+	<delete id="removeProductLike">
+		DELETE FROM product_like
+		WHERE user_id = #{userId} and product_display_id = #{productDisplayId}
+	</delete>
+
+	<!-- // 좋아요 상태 확인
+	public boolean isProductLiked( @Param("userId") String userId,  @Param("productDisplayId")String productDisplayId) throws Exception; -->
+	<select id="isProductLiked" resultType="String" parameterType="java.util.Map">
+        SELECT COUNT(*)
+        FROM product_like
+        WHERE user_id = #{userId} and product_display_id = #{productDisplayId}
+    </select>
+    <!-- 브랜드 좋아요 관련 -->
+    <!-- // 좋아요 버튼을 누르면 데이터에 추가하는 작업
+	public boolean addBrandLike( @Param("userId") String userId,  @Param("brandId")String brandId) throws Exception; -->
+	<insert id="addBrandLike" parameterType="java.util.Map">
+        INSERT INTO brand_like
+        VALUES ( 'brl_' || brand_like_seq.NEXTVAL, #{userId}, #{brandId} )
+    </insert>
+
+	<!-- // 좋아요 버튼을 한번 더 누르면 데이터에 삭제하는 작업
+	public boolean removeBrandLike( @Param("userId") String userId, @Param("brandId")String brandId) throws Exception; -->
+	<delete id="removeBrandLike">
+		DELETE FROM brand_like
+		WHERE user_id = #{userId} and brand_id = #{brandId}
+	</delete>
+
+	<!-- // 좋아요 상태 확인
+	public boolean isBrandLiked( @Param("userId") String userId,  @Param("brandId")String brandId) throws Exception; -->
+	<select id="isBrandLiked" resultType="String" parameterType="java.util.Map">
+        SELECT COUNT(*)
+        FROM brand_like
+        WHERE user_id = #{userId} and brand_id = #{brandId}
+    </select>
+    
+<!--     // 그 카테고리에 많이 본 상품아이디 20개 갖고오는 작업 getTopviewProductId
+	public List<String> getTopviewProductId (@Param("largeId") String largeId); -->
+    
+    <select id="getTopviewProductId" resultType="String">
+    <![CDATA[
+		SELECT t.product_display_id
+		FROM (
+			SELECT product_display_id, COUNT(*)
+			FROM product_view
+			WHERE category_large_id = #{largeId}
+			GROUP BY product_display_id
+			ORDER BY COUNT(*) desc
+		)t
+		WHERE rownum <= 20
+		]]>
+	</select>
+	
+	<!-- // 상품 아이디를 가지고 상품 정보 객체 갖고오기
+	public List<ProductContainer> getTopviewProduct (@Param("productDisplayIds")List<String> productDisplayIds); -->
+	
+	<select id="getTopviewProduct" resultType="ProductContainer">
+
+				<![CDATA[
+			SELECT distinct productcontainer.*
+        	,CASE 
+        	WHEN pl.PRODUCT_DISPLAY_ID IS NOT NULL THEN 1
+        	ELSE 0
+    		END AS productLikeState
+          	FROM productcontainer 
+			LEFT JOIN product_like pl ON productcontainer.PRODUCT_DISPLAY_ID = pl.PRODUCT_DISPLAY_ID 
+				]]>
+					<where>
+					<if test="userId != null">
+						 pl.user_id = #{userId} AND
+                    </if>
+						productcontainer.PRODUCT_DISPLAY_ID IN
+						<foreach collection="productDisplayIds" item="productDisplayIds" open="(" close=")" separator=",">
+							#{productDisplayIds}
+						</foreach>
+					</where>
+				
+			
+	</select>
+	
+
+</mapper>
