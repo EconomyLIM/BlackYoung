@@ -4,7 +4,7 @@
 담당인원 : 6명 <br>
 <br>
 사용자에게 상품을 보여주고 결제까지 진행할 수 있는 프로젝트이며 <br>
-프로젝트를 진행하며 Srping Framework, Mybatis, AWS 등 기술들을 향상시키는데에 집중했습니다. <br>
+프로젝트를 진행하며 Srping Framework, Mybatis, AWS 등 스택을 향상시키는데에 집중했습니다. <br>
 
 # :memo: 담당역할 
 임경재 (조장, 메인 페이지, 상품 관련, 관리자 페이지) <br>
