@@ -6,7 +6,7 @@
 사용자에게 상품을 보여주고 결제까지 진행할 수 있는 프로젝트이며 <br>
 프로젝트를 진행하며 Srping Framework, Mybatis, AWS 등 기술들을 향상시키는데에 집중했습니다. <br>
 
-# 담당역할 
+# :memo: 담당역할 
 임경재 (조장, 메인 페이지, 상품 관련, 관리자 페이지) <br>
 이상문 (결제, 랭킹, 매장) <br>
 신기범 (리뷰, 헤더 관련 기능, 검색) <br>
@@ -24,7 +24,7 @@
 
 <br>
 
-# 구현
+# :hammer: 구현
 
 ### 1. 메인화면
 ![홈페이지(개선)](https://github.com/EconomyLIM/OliveYoungClone/assets/119987898/6de45d93-c85f-436d-b032-f0e08e8df510)
