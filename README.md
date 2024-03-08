@@ -2,8 +2,15 @@
 
 개발기간: 2023-12-02 ~ 2023-12-26
 
-BackEnd
-FrontEnd
+# BackEnd
+![슬라이드1](https://github.com/EconomyLIM/OliveYoungClone/assets/119987898/144d61a0-a06c-41b9-9798-4828bd8b5f6c)
+
+<br>
+
+# FrontEnd
+![슬라이드2](https://github.com/EconomyLIM/OliveYoungClone/assets/119987898/b1bf898c-3559-4b64-ae34-5912afb807f8)
+
+<br>
 
 팀원: 
 임경재 (조장, 메인 페이지, 상품 관련, 관리자 페이지) <br>
