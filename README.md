@@ -20,6 +20,8 @@
 김호영 (마이페이지) <br>
 정하영 (브랜드 페이지) <br>
 
+# 구현
+
 ### 1. 메인화면
 ![홈페이지(개선)](https://github.com/EconomyLIM/OliveYoungClone/assets/119987898/6de45d93-c85f-436d-b032-f0e08e8df510)
 <br>
